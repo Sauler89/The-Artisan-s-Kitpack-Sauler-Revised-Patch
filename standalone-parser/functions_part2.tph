@@ -1,0 +1,85 @@
+DEFINE_PATCH_FUNCTION BRK_ENFORCE_RANGED_CAP BEGIN
+  SET brk_ber_col = 0 - 1
+  COUNT_2DA_COLS brk_wp_cols
+
+  READ_2DA_ENTRIES_NOW brk_wp_head 1
+  FOR (brk_r = 0; (brk_r < brk_wp_head) AND (brk_ber_col < 0); ++brk_r) BEGIN
+    READ_2DA_ENTRY_FORMER brk_wp_head brk_r 0 brk_tok
+    PATCH_IF (~%brk_tok%~ STRING_EQUAL_CASE ~ID~) BEGIN
+      FOR (brk_c = 1; (brk_c < (brk_wp_cols - 1)) AND (brk_ber_col < 0); ++brk_c) BEGIN
+        READ_2DA_ENTRY_FORMER brk_wp_head brk_r brk_c brk_tok
+        PATCH_IF (~%brk_tok%~ STRING_EQUAL_CASE ~BERSERKER~) BEGIN
+          SET brk_ber_col = brk_c + 1
+        END
+      END
+    END
+  END
+
+  PATCH_IF (brk_ber_col < 0) BEGIN
+    PATCH_FAIL ~Berserker Revised KIT: BERSERKER column not found in WEAPPROF.2DA.~
+  END
+
+  READ_2DA_ENTRIES_NOW brk_wp brk_wp_cols
+  SET brk_wp_writes = 0
+  FOR (brk_r = 0; brk_r < brk_wp; ++brk_r) BEGIN
+    READ_2DA_ENTRY_FORMER brk_wp brk_r 0 brk_tok
+    PATCH_IF (~%brk_tok%~ STRING_EQUAL_CASE ~BOW_BG1~)
+          OR (~%brk_tok%~ STRING_EQUAL_CASE ~MISSILE_BG1~)
+          OR (~%brk_tok%~ STRING_EQUAL_CASE ~CROSSBOW~)
+          OR (~%brk_tok%~ STRING_EQUAL_CASE ~LONGBOW~)
+          OR (~%brk_tok%~ STRING_EQUAL_CASE ~SHORTBOW~)
+          OR (~%brk_tok%~ STRING_EQUAL_CASE ~DART~)
+          OR (~%brk_tok%~ STRING_EQUAL_CASE ~SLING~)
+          OR (~%brk_tok%~ STRING_EQUAL_CASE ~BOW~)
+          OR (~%brk_tok%~ STRING_EQUAL_CASE ~MISSILE~) BEGIN
+      SET_2DA_ENTRY_LATER ~brk_wpw~ brk_r brk_ber_col ~1~
+      SET brk_wp_writes += 1
+    END
+  END
+  PATCH_IF (brk_wp_writes = 0) BEGIN
+    PATCH_FAIL ~Berserker Revised KIT: no supported ranged proficiency rows found in WEAPPROF.2DA.~
+  END ELSE BEGIN
+    SET_2DA_ENTRIES_NOW ~brk_wpw~ brk_wp_cols
+  END
+END
+
+// Resolve the existing kit-description strref for a stock kit and keep the
+// CLASTEXT-family tables pointing at that same strref. This avoids creating a
+// duplicate kit and keeps character-generation UI text coherent.
+DEFINE_ACTION_FUNCTION BRK_GET_KIT_STRREF
+  STR_VAR kit_name = ~~
+  RET kit_strref
+BEGIN
+  OUTER_SET kit_strref = 0 - 1
+  ACTION_IF (STRING_LENGTH ~%kit_name%~ > 0) BEGIN
+    COPY_EXISTING ~kitlist.2da~ ~override~
+      TO_LOWER kit_name
+      COUNT_2DA_ROWS 5 brk_num_rows
+      FOR (brk_row = 0; brk_row < brk_num_rows; brk_row += 1) BEGIN
+        READ_2DA_ENTRY brk_row 1 5 brk_kit
+        TO_LOWER brk_kit
+        PATCH_IF (~%brk_kit%~ STRING_EQUAL ~%kit_name%~) BEGIN
+          READ_2DA_ENTRY brk_row 4 5 kit_strref
+          SET brk_row = brk_num_rows
+        END
+      END
+    BUT_ONLY
+
+    ACTION_IF (kit_strref >= 0) BEGIN
+      ACTION_FOR_EACH brk_classtext IN BGCLATXT CLASTEXT SODCLTXT BEGIN
+        ACTION_IF FILE_EXISTS_IN_GAME ~%brk_classtext%.2da~ BEGIN
+          COPY_EXISTING ~%brk_classtext%.2da~ ~override~
+            COUNT_2DA_COLS brk_cols
+            READ_2DA_ENTRIES_NOW brk_rows brk_cols
+            FOR (brk_row = 1; brk_row < brk_rows; ++brk_row) BEGIN
+              READ_2DA_ENTRY_FORMER brk_rows brk_row 0 brk_text
+              PATCH_IF (~%brk_text%~ STRING_EQUAL ~%kit_name%~) BEGIN
+                SET_2DA_ENTRY brk_row 4 brk_cols kit_strref
+              END
+            END
+          BUT_ONLY
+        END
+      END
+    END
+  END
+END
