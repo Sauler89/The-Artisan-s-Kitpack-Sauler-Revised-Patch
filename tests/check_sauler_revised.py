@@ -39,6 +39,7 @@ check("Berserker router points to Sauler implementation", "Berserker_Sauler_Revi
 
 # Core identity / removed upstream mechanics.
 check("uses stock SPCL321 Enrage progression", "GA_SPCL321" in code)
+check("does not restore permanent stock AP_SPCL322 casting-button lock", "AP_SPCL322" not in code)
 check("does not grant Artisan custom Enrage", "GA_C0BER#00" not in code)
 check("does not grant Reckless Frenzy", "GA_C0BER#05" not in code and "Reckless Frenzy" not in code)
 check("does not install Extend Rage HLA", "C0BER#H1" not in code and "patch_add_hla" not in code)
