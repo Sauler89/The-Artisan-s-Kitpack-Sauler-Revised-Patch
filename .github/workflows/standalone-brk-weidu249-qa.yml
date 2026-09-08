@@ -1,0 +1,50 @@
+name: Standalone BRK WeiDU 249 QA
+
+on:
+  push:
+    branches:
+      - standalone-brk-weidu249-qa
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  parse:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Check out QA branch
+        uses: actions/checkout@v4
+
+      - name: Materialize standalone source payload
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/brkqa
+          base64 -d standalone-qa/brk-alpha2.tgz.b64 | tar -xzf - -C /tmp/brkqa
+          find /tmp/brkqa -type f -maxdepth 5 -print
+
+      - name: Download WeiDU 249.00
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -L --fail --retry 3 \
+            -o /tmp/weidu249.zip \
+            https://github.com/WeiDUorg/weidu/releases/download/v249.00/WeiDU-Linux-249-amd64.zip
+          mkdir -p /tmp/weidu249
+          unzip -q /tmp/weidu249.zip -d /tmp/weidu249
+          WEIDU=$(find /tmp/weidu249 -type f -name weidu -print -quit)
+          test -n "$WEIDU"
+          chmod +x "$WEIDU"
+          echo "WEIDU=$WEIDU" >> "$GITHUB_ENV"
+          "$WEIDU" --version
+
+      - name: Parse standalone sources with WeiDU 249
+        shell: bash
+        working-directory: /tmp/brkqa
+        run: |
+          set -euo pipefail
+          "$WEIDU" --parse-check TPH BerserkerRevisedKIT/lib/functions.tph
+          "$WEIDU" --parse-check TPA BerserkerRevisedKIT/lib/main.tpa
+          "$WEIDU" --parse-check TPA BerserkerRevisedKIT/lib/compat_saa54.tpa
+          "$WEIDU" --parse-check TP2 Setup-BerserkerRevisedKIT.tp2
