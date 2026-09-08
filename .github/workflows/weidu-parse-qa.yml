@@ -1,0 +1,46 @@
+name: WeiDU 251 Parse QA
+
+on:
+  push:
+    branches:
+      - master
+      - sauler-revised-bootstrap
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  weidu-parse:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Download stable WeiDU 251.00
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -L --fail --retry 3 \
+            -o /tmp/weidu-linux-251.zip \
+            https://github.com/WeiDUorg/weidu/releases/download/v251.00/WeiDU-Linux-251.zip
+          mkdir -p /tmp/weidu251
+          unzip -q /tmp/weidu-linux-251.zip -d /tmp/weidu251
+          WEIDU=$(find /tmp/weidu251 -type f -name weidu -print -quit)
+          if [ -z "${WEIDU}" ]; then
+            echo "WeiDU executable not found in release archive." >&2
+            exit 1
+          fi
+          chmod +x "${WEIDU}"
+          echo "WEIDU=${WEIDU}" >> "$GITHUB_ENV"
+          "${WEIDU}" --version
+
+      - name: Parse main TP2
+        run: '"$WEIDU" --parse-check TP2 ArtisansKitpack/ArtisansKitpack.TP2'
+
+      - name: Parse Berserker router
+        run: '"$WEIDU" --parse-check TPA ArtisansKitpack/lib/Berserker.tpa'
+
+      - name: Parse Sauler Revised Berserker implementation
+        run: '"$WEIDU" --parse-check TPA ArtisansKitpack/lib/Berserker_Sauler_Revised.tpa'
