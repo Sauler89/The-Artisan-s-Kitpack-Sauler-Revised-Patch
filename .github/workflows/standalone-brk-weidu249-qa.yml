@@ -21,8 +21,10 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p /tmp/brkqa
-          base64 -d standalone-qa/brk-alpha2.tgz.b64 | tar -xzf - -C /tmp/brkqa
-          find /tmp/brkqa -type f -maxdepth 5 -print
+          cat standalone-qa/chunk00.txt standalone-qa/chunk01.txt standalone-qa/chunk02.txt standalone-qa/chunk03.txt \
+            | base64 -d \
+            | tar -xzf - -C /tmp/brkqa
+          find /tmp/brkqa -maxdepth 5 -type f -print
 
       - name: Download WeiDU 249.00
         shell: bash
