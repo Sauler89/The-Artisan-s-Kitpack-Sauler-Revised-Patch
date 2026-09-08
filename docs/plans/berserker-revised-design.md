@@ -99,7 +99,7 @@ Expected behavior:
 - duration: 1 turn / 60 seconds;
 - +15 temporary Hit Points retained;
 - stock/EE delayed Winded/cooldown machinery retained by leaving `SPCL321D` untouched;
-- `STATE_ENRAGED` is explicitly normalized for conditional mechanics and AI awareness;
+- `STATE_ENRAGED` is explicitly normalized for conditional mechanics and general interoperability;
 - wizard and priest spellcasting disabled while Enraged.
 
 ### Removed Artisan mechanics
@@ -139,7 +139,7 @@ Enrage deliberately does **not** grant immunity to:
 
 The implementation removes related EE Fixpack residue for protections that were intentionally dropped, including the Feeblemind VFX protection and the level-drain scripting/feedback mirror.
 
-## Detectable Spells / SCS
+## SPLSTATE / interoperability markers
 
 The implementation normalizes the following SPLSTATE immunity markers when available:
 
@@ -152,7 +152,13 @@ The implementation normalizes the following SPLSTATE immunity markers when avail
 
 It also explicitly applies `STATE_ENRAGED` (104).
 
-The intended installation model is for #1003 to be installed before SCS so SCS sees the revised Enrage state/protection profile.
+These markers are retained as general Infinity Engine interoperability metadata. They do **not** make SCS class/kit components part of the supported design target.
+
+### SCS scope for this project
+
+The intended personal installation may use SCS only for **general game tweaks**. SCS components that modify classes, kits, Rage/Enrage, class HLAs, or other kit-specific mechanics are intentionally excluded.
+
+Accordingly, the Berserker is not designed around SCS's class/kit rewrites and does not require them for validation. An optional smoke test with the user's final SCS tweak-only selection is sufficient to ensure those general tweaks do not disturb #1003.
 
 ## Ranged policy
 
@@ -222,7 +228,7 @@ The implementation creates runtime SPL shells from the installed game's `SPCL321
 - Winded/cooldown behavior;
 - all intended immunities and all deliberately missing immunities;
 - spellcasting lockout;
-- SCS Detectable Spells behavior;
+- optional SCS general-tweak-only smoke test, with class/kit-changing SCS components excluded;
 - S&A v5.4 #150 and proficiency-overhaul interaction;
 - HLA/Hardiness availability;
 - dual-class cases.
