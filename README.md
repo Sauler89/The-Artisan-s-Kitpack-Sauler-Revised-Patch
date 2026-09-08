@@ -82,18 +82,20 @@ Unless explicitly recorded in [SAULER-REVISIONS.md](SAULER-REVISIONS.md), compon
 
 ## Compatibility and install order
 
-The Berserker revision is being designed for BG2EE/EET mod stacks that can include EE Fixpack, SCS, and Skills and Abilities.
+The Berserker revision is being designed for BG2EE/EET mod stacks that can include EE Fixpack, Skills and Abilities, and selected **SCS general-tweak components only**.
+
+SCS is **not** part of the class/kit overhaul stack for this project. The intended personal setup excludes SCS components that modify classes, kits, Rage/Enrage, class HLAs, or other kit-specific mechanics. Sauler Revised and Skills and Abilities remain the authoritative sources for the Berserker/class mechanics described here.
 
 Recommended high-level order for the current development build:
 
 1. base fixes / EE Fixpack;
 2. The Artisan's Kitpack — Sauler Revised Patch, including **#1003 Berserker Overhaul**;
-3. SCS;
+3. optional SCS **general tweaks only**, excluding class/kit-changing components;
 4. other late gameplay mods;
 5. Skills and Abilities v5.4;
 6. `EET_END`, if applicable.
 
-The exact S&A v5.4 compatibility notes are documented in [docs/compatibility/skills-and-abilities.md](docs/compatibility/skills-and-abilities.md).
+The exact S&A v5.4 compatibility notes are documented in [docs/compatibility/skills-and-abilities.md](docs/compatibility/skills-and-abilities.md). The SCS scope used by this project is documented in [docs/compatibility/scs.md](docs/compatibility/scs.md).
 
 ### Skills and Abilities v5.4
 
@@ -127,7 +129,7 @@ Static QA does **not** replace testing on a real BG2EE/EET installation. Before 
 - HP thresholds 75%, 50%, and 25%;
 - Enrage start/end and Winded behavior;
 - dual-class progression;
-- SCS AI/Detectable Spells behavior;
+- optional smoke test with the user's SCS **general-tweak-only** selection, with all SCS class/kit components excluded;
 - Skills and Abilities v5.4 interaction;
 - Hardiness/HLA availability.
 
