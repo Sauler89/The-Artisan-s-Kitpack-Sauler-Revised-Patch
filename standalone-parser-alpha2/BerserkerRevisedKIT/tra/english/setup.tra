@@ -1,0 +1,56 @@
+@100 = ~Berserker Revised KIT~
+@110 = ~Skills and Abilities v5.4 compatibility tail~
+@200 = ~BERSERKER: Berserkers surrender discipline for raw violence, fighting more ferociously as wounds accumulate. Their strength is greatest at close range and under Enrage, but reckless swings and an open guard make low-health fighting genuinely dangerous.
+
+Advantages:
+– Immune to involuntary berserk effects.
+– Gains In Extremis.
+
+IN EXTREMIS: At 75% Hit Points or less, the Berserker suffers a -1 penalty to melee attack rolls, gains +1 melee damage, and suffers a 2-point Armor Class penalty. Below 50% Hit Points these values become -2 to hit, +2 damage, a 3-point Armor Class penalty, and +1/2 attack per round. Below 25% Hit Points they become -4 to hit, +4 damage, a 4-point Armor Class penalty, and +1 attack per round. While Enraged, the melee damage bonuses double to +2/+4/+8.
+
+– 7th level: In Extremis also grants +1/+2/+4 movement rate.
+– 10th level: In Extremis also grants +1/+2/+4 to all Saving Throws.
+– 14th level: In Extremis also grants 3%/6%/10% resistance to slashing, crushing, piercing, and missile damage. While Enraged, these totals double to 6%/12%/20%.
+– 20th level: While below 50%/25% Hit Points, gains +1/+2 Luck.
+– May use Enrage once per day at 1st level and gains one additional use every 4 levels thereafter.
+
+ENRAGE: For 1 turn, the Berserker gains 15 temporary Hit Points and becomes immune to charm, confusion, fear, hold, paralysis, sleep, unconsciousness, stun, Power Word: Stun, and morale failure. Enrage does not protect against feeblemind, Maze, Imprisonment, level drain, or death effects. The Berserker cannot cast wizard or priest spells while Enraged. While Enraged, In Extremis melee-damage bonuses and, from 14th level, physical-resistance bonuses are doubled. After Enrage ends, the normal Berserker winded/cooldown period applies.
+
+Disadvantages:
+– May not Specialize in ranged-only weapon categories.
+– Alignment restricted to any non-lawful.~
+
+@201 = ~BERSERKER: Berserkers surrender discipline for raw violence, fighting more ferociously as wounds accumulate. Their strength is greatest at close range and under Enrage, but reckless swings and an open guard make low-health fighting genuinely dangerous.
+
+Advantages:
+– Immune to involuntary berserk effects.
+– Gains In Extremis.
+
+IN EXTREMIS: At 75% Hit Points or less, the Berserker suffers a -1 penalty to melee attack rolls, gains +1 melee damage, and suffers a 2-point Armor Class penalty. Below 50% Hit Points these values become -2 to hit, +2 damage, a 3-point Armor Class penalty, and +1/2 attack per round. Below 25% Hit Points they become -4 to hit, +4 damage, a 4-point Armor Class penalty, and +1 attack per round. While Enraged, the melee damage bonuses double to +2/+4/+8.
+
+– 7th level: In Extremis also grants +1/+2/+4 movement rate.
+– 10th level: In Extremis also grants +1/+2/+4 to all Saving Throws.
+– 14th level: In Extremis also grants 3%/6%/10% resistance to slashing, crushing, piercing, and missile damage. While Enraged, these totals double to 6%/12%/20%.
+– 20th level: While below 50%/25% Hit Points, gains +1/+2 Luck.
+– May use Enrage once per day at 1st level and gains one additional use every 4 levels thereafter.
+
+ENRAGE: For 1 turn, the Berserker gains 15 temporary Hit Points and becomes immune to charm, confusion, fear, hold, paralysis, sleep, unconsciousness, stun, Power Word: Stun, and morale failure. Enrage does not protect against feeblemind, Maze, Imprisonment, level drain, or death effects. The Berserker cannot cast wizard or priest spells while Enraged. While Enraged, In Extremis melee-damage bonuses and, from 14th level, physical-resistance bonuses are doubled. After Enrage ends, the normal Berserker winded/cooldown period applies.
+
+SKILLS AND ABILITIES v5.4: If the Add New Fighter Abilities component (#150) is installed, the Berserker also gains Second Wind once per day at 1st level, Indomitable (+1 to all Saving Throws at 9th level, +2 at 13th, +3 at 17th), and a permanent +1/2 attack per round at 20th level. These are Fighter progression features and stack with In Extremis.
+
+Disadvantages:
+– May not Specialize in ranged-only weapon categories.
+– Alignment restricted to any non-lawful.~
+
+@900 = ~Berserker Revised KIT requires Baldur's Gate II: Enhanced Edition or EET.~
+@901 = ~Berserker Revised KIT could not find CLABFI02.2DA.~
+@902 = ~Berserker Revised KIT is not compatible with Artisan's Berserker Overhaul (component 1003), including the Chriz Balance Patch fork. Install one Berserker overhaul only.~
+@903 = ~Install the Berserker Revised KIT main component (#0) first.~
+@904 = ~This late compatibility tail requires Skills and Abilities #150 or Proficiency Overhaul #311/#312/#313. HLA components #710/#720 are already compatible and do not require the tail.~
+@906 = ~Berserker Revised KIT is not compatible with the old Skills and Abilities component #190 (Update Berserker Enrage). In Skills and Abilities v5.4 this component is disabled/commented out.~
+@300 = ~Enrage~
+@301 = ~ENRAGE: For 1 turn, the Berserker gains 15 temporary Hit Points and becomes immune to charm, confusion, fear, hold, paralysis, sleep, unconsciousness, stun, Power Word: Stun, and morale failure. Enrage does not protect against feeblemind, Maze, Imprisonment, level drain, or death effects. Wizard and priest spellcasting is disabled while Enraged. When Enrage ends, the normal Berserker Winded/cooldown period applies. In Extremis melee-damage bonuses and level-14 physical-resistance bonuses are doubled while Enraged.~
+@905 = ~Berserker Revised KIT is not compatible with the older Berserker Reforged standalone component. Uninstall the old overhaul first.~
+@907 = ~Berserker Revised KIT could not find SPCL321.SPL.~
+@908 = ~Berserker Revised KIT could not find WEAPPROF.2DA.~
+@909 = ~Berserker Revised KIT could not find KITLIST.2DA.~
