@@ -1,0 +1,100 @@
+COPY_EXISTING ~brkl3.spl~ ~override~
+  LPF BRK_ADD_CLEANUP STR_VAR r1=~BRKL1~ r2=~BRKL2~ r3=~BRKL3~ END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 22 target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 2 END
+BUT_ONLY
+
+// -----------------------------------------------------------------------------
+// 8. Patch the installed Berserker CLAB without replacing it.
+//
+// Stock CLABFI02 contains AP_SPCL322 ("Disable Magic casting button"). That
+// permanent CLAB spell is incompatible with a Berserker->Mage/multikit design:
+// spellcasting must be blocked only while Enraged by opcode 145 in SPCL321.
+// Remove AP_SPCL322 while preserving GA_SPCL321 and every unrelated CLAB entry.
+// -----------------------------------------------------------------------------
+COPY_EXISTING ~clabfi02.2da~ ~override~
+  REPLACE_TEXTUALLY CASE_INSENSITIVE EXACT_MATCH ~AP_SPCL322~ ~****~
+  COUNT_REGEXP_INSTANCES CASE_INSENSITIVE EXACT_MATCH ~AP_SPCL322~ brk_spcl322_left
+  PATCH_IF (brk_spcl322_left > 0) BEGIN
+    PATCH_FAIL ~Berserker Revised KIT: AP_SPCL322 remained in CLABFI02 after normalization.~
+  END
+  COUNT_REGEXP_INSTANCES CASE_INSENSITIVE EXACT_MATCH ~GA_SPCL321~ brk_spcl321_count
+  PATCH_IF (brk_spcl321_count < 1) BEGIN
+    PATCH_FAIL ~Berserker Revised KIT: GA_SPCL321 Enrage progression is missing from CLABFI02.~
+  END
+  LPF BRK_SET_CLAB_ENTRY INT_VAR level = 1  STR_VAR entry = ~AP_BRKIE1~  END
+  LPF BRK_SET_CLAB_ENTRY INT_VAR level = 7  STR_VAR entry = ~AP_BRKIE7~  END
+  LPF BRK_SET_CLAB_ENTRY INT_VAR level = 10 STR_VAR entry = ~AP_BRKIE10~ END
+  LPF BRK_SET_CLAB_ENTRY INT_VAR level = 14 STR_VAR entry = ~AP_BRKIE14~ END
+  LPF BRK_SET_CLAB_ENTRY INT_VAR level = 20 STR_VAR entry = ~AP_BRKIE20~ END
+  PRETTY_PRINT_2DA
+BUT_ONLY
+
+// -----------------------------------------------------------------------------
+// 9. Enrage: keep the stock one-turn/cooldown chassis and +15 temporary HP,
+//    but remove the flat +2/+2/-2 combat package and the overbroad immunities.
+//    SPCL321D (Winded/cooldown) is deliberately untouched.
+// -----------------------------------------------------------------------------
+OUTER_SET brk_charm_state = IDS_OF_SYMBOL (~splstate~ ~CHARM_IMMUNITY~)
+OUTER_SET brk_conf_state  = IDS_OF_SYMBOL (~splstate~ ~CONFUSION_IMMUNITY~)
+OUTER_SET brk_hold_state  = IDS_OF_SYMBOL (~splstate~ ~HOLD_IMMUNITY~)
+OUTER_SET brk_panic_state = IDS_OF_SYMBOL (~splstate~ ~PANIC_IMMUNITY~)
+OUTER_SET brk_sleep_state = IDS_OF_SYMBOL (~splstate~ ~SLEEP_IMMUNITY~)
+OUTER_SET brk_stun_state  = IDS_OF_SYMBOL (~splstate~ ~STUN_IMMUNITY~)
+OUTER_SET brk_feeb_state  = IDS_OF_SYMBOL (~splstate~ ~FEEBLEMIND_IMMUNITY~)
+
+COPY_EXISTING ~spcl321.spl~ ~override~
+  // Vanilla Rage's flat combat bonuses. Winded penalties are in SPCL321D.
+  LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 0 END
+  LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 54 END
+  LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 73 END
+  LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 284 END
+  LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 285 END
+
+  // Normalize every Enrage immunity that Revised KIT owns. Delete stock/EEFP copies
+  // first so the final spell has exactly one op101 entry per intended category; this
+  // also prevents duplicate detectable-state marker clones in later mods.
+  LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 101 match_parameter2 = 5   END // charm
+  LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 101 match_parameter2 = 128 END // confusion
+  LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 101 match_parameter2 = 24  END // fear
+  LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 101 match_parameter2 = 175 END // hold
+  LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 101 match_parameter2 = 109 END // paralysis
+  LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 101 match_parameter2 = 39  END // sleep
+  LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 101 match_parameter2 = 217 END // unconsciousness
+  LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 101 match_parameter2 = 45  END // stun
+  LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 101 match_parameter2 = 210 END // Power Word: Stun
+  LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 101 match_parameter2 = 23  END // morale
+  LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 101 match_parameter2 = 106 END // morale break
+
+  // Explicitly remove immunities that do not fit the Revised balance.
+  LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 101 match_parameter2 = 76  END // feeblemind
+  LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 101 match_parameter2 = 211 END // imprisonment
+  LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 101 match_parameter2 = 213 END // maze
+  LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 101 match_parameter2 = 216 END // level drain
+
+  // EE Fixpack adds a dedicated VFX block (CDFEEBLE) to every effect package that
+  // grants opcode-76 immunity. Since Revised KIT intentionally removes Feeblemind
+  // immunity, remove that visual block too so a successful Feeblemind remains visible.
+  LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 296 STR_VAR match_resource = ~cdfeeble~ END
+
+  // Remove stale detectable-spell states for immunities we just removed, when present.
+  PATCH_IF (brk_feeb_state >= 0) BEGIN
+    LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 328 match_parameter2 = brk_feeb_state END
+  END
+  // EE Fixpack mirrors level-drain immunity into a scripting state (opcode 282).
+  // Remove that mirror as well, otherwise scripting systems may still treat the Berserker as protected.
+  LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 282 match_parameter1 = 1 match_parameter2 = 2 END
+
+  // EE Fixpack/SPCL321 may contain level-drain feedback suppressions; remove them
+  // so actual drains remain visible now that Enrage no longer protects against them.
+  LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 267 match_parameter1 = 41495 END
+  LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 267 match_parameter1 = 40968 END
+  LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 267 match_parameter1 = 40969 END
+  LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 267 match_parameter1 = 40979 END
+  LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 267 match_parameter1 = 41616 END
+
+  // Re-add exactly one copy of each intended one-turn immunity after normalization.
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 101 target = 2 timing = 0 duration = 60 resist_dispel = 2 parameter2 = 5   END // charm
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 101 target = 2 timing = 0 duration = 60 resist_dispel = 2 parameter2 = 128 END // confusion
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 101 target = 2 timing = 0 duration = 60 resist_dispel = 2 parameter2 = 24  END // fear
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 101 target = 2 timing = 0 duration = 60 resist_dispel = 2 parameter2 = 175 END // hold
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 101 target = 2 timing = 0 duration = 60 resist_dispel = 2 parameter2 = 109 END // paralysis
