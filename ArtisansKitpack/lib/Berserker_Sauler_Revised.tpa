@@ -1,0 +1,530 @@
+// ============================================================================
+// The Artisan's Kitpack - Berserker Overhaul (#1003)
+// Sauler Revised implementation
+//
+// Upstream baseline: TheArtisanBG/The-Artisan-s-Kitpack @ 85928f964f6965fd...
+// Design source: Berserker Reforged v0.1.0-alpha3, adapted to the native
+// Artisan Kitpack component architecture.
+// ============================================================================
+
+// Keep the original Artisan portrait icon asset for In Extremis. The old
+// Berserker 2DA/SPL/EFF package remains in the repository for upstream-diff
+// readability, but this revised component deliberately does not install it.
+COPY ~%MOD_FOLDER%/Fighter/Berserker/BAMS/C0BER#IC.BAM~ ~OVERRIDE~
+
+// ---------------------------------------------------------------------------
+// Local helpers. They are intentionally kept inside this implementation so the
+// Sauler revision does not alter shared Artisan libraries used by other kits.
+// ---------------------------------------------------------------------------
+DEFINE_PATCH_FUNCTION srber_clear_effects BEGIN
+  FOR (srber_op = 0; srber_op <= 500; ++srber_op) BEGIN
+    LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = srber_op END
+  END
+END
+
+// Write a signed parameter1 directly into every extended-header effect matching
+// an opcode. This is needed for opcode 325, where negative values are save bonuses.
+DEFINE_PATCH_FUNCTION srber_set_signed_p1
+  INT_VAR match_op = 0
+          new_p1   = 0
+BEGIN
+  READ_LONG  0x64 srber_abil_off
+  READ_SHORT 0x68 srber_abil_num
+  READ_LONG  0x6a srber_fx_off
+  FOR (srber_i = 0; srber_i < srber_abil_num; ++srber_i) BEGIN
+    READ_SHORT (srber_abil_off + srber_i * 0x28 + 0x1e) srber_nfx
+    READ_SHORT (srber_abil_off + srber_i * 0x28 + 0x20) srber_first
+    FOR (srber_j = 0; srber_j < srber_nfx; ++srber_j) BEGIN
+      READ_SHORT (srber_fx_off + (srber_first + srber_j) * 0x30) srber_cur_op
+      PATCH_IF (srber_cur_op = match_op) BEGIN
+        WRITE_LONG (srber_fx_off + (srber_first + srber_j) * 0x30 + 0x04) new_p1
+      END
+    END
+  END
+END
+
+// Remove all sibling tier effects before applying a refreshed tier. This keeps
+// threshold transitions deterministic and prevents temporary 12-second stacking.
+DEFINE_PATCH_FUNCTION srber_add_cleanup
+  STR_VAR r1 = ~~ r2 = ~~ r3 = ~~ d1 = ~~ d2 = ~~ d3 = ~~
+BEGIN
+  PATCH_IF (STRING_LENGTH ~%r1%~ > 0) BEGIN
+    LPF ADD_SPELL_EFFECT INT_VAR opcode = 321 target = 2 timing = 0 resist_dispel = 2 parameter1 = 8 insert_point = 0 STR_VAR resource = EVAL ~%r1%~ END
+  END
+  PATCH_IF (STRING_LENGTH ~%r2%~ > 0) BEGIN
+    LPF ADD_SPELL_EFFECT INT_VAR opcode = 321 target = 2 timing = 0 resist_dispel = 2 parameter1 = 8 insert_point = 0 STR_VAR resource = EVAL ~%r2%~ END
+  END
+  PATCH_IF (STRING_LENGTH ~%r3%~ > 0) BEGIN
+    LPF ADD_SPELL_EFFECT INT_VAR opcode = 321 target = 2 timing = 0 resist_dispel = 2 parameter1 = 8 insert_point = 0 STR_VAR resource = EVAL ~%r3%~ END
+  END
+  PATCH_IF (STRING_LENGTH ~%d1%~ > 0) BEGIN
+    LPF ADD_SPELL_EFFECT INT_VAR opcode = 321 target = 2 timing = 0 resist_dispel = 2 parameter1 = 8 insert_point = 0 STR_VAR resource = EVAL ~%d1%~ END
+  END
+  PATCH_IF (STRING_LENGTH ~%d2%~ > 0) BEGIN
+    LPF ADD_SPELL_EFFECT INT_VAR opcode = 321 target = 2 timing = 0 resist_dispel = 2 parameter1 = 8 insert_point = 0 STR_VAR resource = EVAL ~%d2%~ END
+  END
+  PATCH_IF (STRING_LENGTH ~%d3%~ > 0) BEGIN
+    LPF ADD_SPELL_EFFECT INT_VAR opcode = 321 target = 2 timing = 0 resist_dispel = 2 parameter1 = 8 insert_point = 0 STR_VAR resource = EVAL ~%d3%~ END
+  END
+END
+
+// Cap ranged-only weapon groups at 1 pip. This understands both stock EE
+// WEAPPROF labels and Skills and Abilities v5.4's consolidated BOW/MISSILE rows.
+// S&A's THROWN and ARCHERY style rows are deliberately not changed.
+DEFINE_PATCH_FUNCTION srber_enforce_ranged_cap BEGIN
+  SET srber_ber_col = 0 - 1
+  COUNT_2DA_COLS srber_wp_cols
+
+  // WEAPPROF's header has no leading row label, while data rows do. Find the
+  // BERSERKER header first, then add one for the data-row column index.
+  READ_2DA_ENTRIES_NOW srber_wp_head 1
+  FOR (srber_r = 0; (srber_r < srber_wp_head) AND (srber_ber_col < 0); ++srber_r) BEGIN
+    READ_2DA_ENTRY_FORMER srber_wp_head srber_r 0 srber_tok
+    PATCH_IF (~%srber_tok%~ STRING_EQUAL_CASE ~ID~) BEGIN
+      FOR (srber_c = 1; (srber_c < (srber_wp_cols - 1)) AND (srber_ber_col < 0); ++srber_c) BEGIN
+        READ_2DA_ENTRY_FORMER srber_wp_head srber_r srber_c srber_tok
+        PATCH_IF (~%srber_tok%~ STRING_EQUAL_CASE ~BERSERKER~) BEGIN
+          SET srber_ber_col = srber_c + 1
+        END
+      END
+    END
+  END
+
+  PATCH_IF (srber_ber_col < 0) BEGIN
+    PATCH_FAIL ~Sauler Revised Berserker: BERSERKER column not found in WEAPPROF.2DA.~
+  END
+
+  READ_2DA_ENTRIES_NOW srber_wp srber_wp_cols
+  SET srber_wp_writes = 0
+  FOR (srber_r = 0; srber_r < srber_wp; ++srber_r) BEGIN
+    READ_2DA_ENTRY_FORMER srber_wp srber_r 0 srber_tok
+    PATCH_IF (~%srber_tok%~ STRING_EQUAL_CASE ~BOW_BG1~)
+          OR (~%srber_tok%~ STRING_EQUAL_CASE ~MISSILE_BG1~)
+          OR (~%srber_tok%~ STRING_EQUAL_CASE ~CROSSBOW~)
+          OR (~%srber_tok%~ STRING_EQUAL_CASE ~LONGBOW~)
+          OR (~%srber_tok%~ STRING_EQUAL_CASE ~SHORTBOW~)
+          OR (~%srber_tok%~ STRING_EQUAL_CASE ~DART~)
+          OR (~%srber_tok%~ STRING_EQUAL_CASE ~SLING~)
+          OR (~%srber_tok%~ STRING_EQUAL_CASE ~BOW~)
+          OR (~%srber_tok%~ STRING_EQUAL_CASE ~MISSILE~) BEGIN
+      SET_2DA_ENTRY_LATER ~srber_wpw~ srber_r srber_ber_col ~1~
+      SET srber_wp_writes += 1
+    END
+  END
+
+  PATCH_IF (srber_wp_writes = 0) BEGIN
+    PATCH_FAIL ~Sauler Revised Berserker: no supported ranged proficiency rows found in WEAPPROF.2DA.~
+  END ELSE BEGIN
+    SET_2DA_ENTRIES_NOW ~srber_wpw~ srber_wp_cols
+  END
+END
+
+// ---------------------------------------------------------------------------
+// STATE_ENRAGED predicate for opcode 326. Reuse Artisan's shared SPLPROT helper
+// so an identical predicate is reused instead of adding duplicate table rows.
+// ---------------------------------------------------------------------------
+LAF ADD_SPLPROT_ENTRY
+  INT_VAR stat = 0x112
+  STR_VAR value = ~104~ relation = ~1~
+  RET srber_enr_row = index
+END
+
+ACTION_IF (srber_enr_row < 0) BEGIN
+  OUTER_PATCH ~~ BEGIN
+    PATCH_FAIL ~Sauler Revised Berserker: could not create/find the STATE_ENRAGED SPLPROT predicate.~
+  END
+END
+
+// ---------------------------------------------------------------------------
+// Build all Sauler Revised runtime resources from the installed game's SPCL321.
+// No new binary SPL/EFF assets are shipped for the revised mechanics.
+// ---------------------------------------------------------------------------
+ACTION_FOR_EACH srber_res IN
+  ~C0BRI1~ ~C0BRI7~ ~C0BRI10~ ~C0BRI14~ ~C0BRI20~
+  ~C0BRO1~ ~C0BRO2~ ~C0BRO3~ ~C0BRD1~ ~C0BRD2~ ~C0BRD3~
+  ~C0BRM1~ ~C0BRM2~ ~C0BRM3~
+  ~C0BRS1~ ~C0BRS2~ ~C0BRS3~
+  ~C0BRR1~ ~C0BRR2~ ~C0BRR3~ ~C0BRX1~ ~C0BRX2~ ~C0BRX3~
+  ~C0BRL1~ ~C0BRL2~ ~C0BRL3~
+BEGIN
+  COPY_EXISTING ~spcl321.spl~ ~override/%srber_res%.spl~
+    LPF srber_clear_effects END
+    WRITE_LONG 0x08 0xffffffff
+    WRITE_LONG 0x0c 0xffffffff
+  BUT_ONLY
+END
+
+// ---------------------------------------------------------------------------
+// Preserve Artisan's In Extremis portrait icon presentation.
+// ---------------------------------------------------------------------------
+DEFINE_ACTION_FUNCTION cd_new_portrait_icon
+  INT_VAR string = 0
+  STR_VAR bam_file = ~****~
+  RET icon
+BEGIN
+  COPY_EXISTING ~statdesc.2da~ ~override~
+    COUNT_2DA_ROWS 3 count
+    READ_2DA_ENTRY (count - 1) 0 3 icon
+    SET icon += 1
+  APPEND ~statdesc.2da~ ~%icon% %string% %bam_file%~ UNLESS ~%bam_file%~
+END
+
+LAF cd_new_portrait_icon
+  INT_VAR string = RESOLVE_STR_REF(~In Extremis~)
+  STR_VAR bam_file = ~c0ber#ic~
+  RET c0ber#ic = icon
+END
+
+// ---------------------------------------------------------------------------
+// Level 1: In Extremis offense/AC/APR + involuntary-berserk immunity.
+// ---------------------------------------------------------------------------
+COPY_EXISTING ~c0bri1.spl~ ~override~
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 101 target = 2 timing = 9 resist_dispel = 2 parameter2 = 3 END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 232 target = 2 timing = 9 resist_dispel = 2 parameter2 = 20 special = 76 STR_VAR resource = ~C0BRO1~ END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 232 target = 2 timing = 9 resist_dispel = 2 parameter2 = 20 special = 50 STR_VAR resource = ~C0BRO2~ END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 232 target = 2 timing = 9 resist_dispel = 2 parameter2 = 20 special = 26 STR_VAR resource = ~C0BRO3~ END
+BUT_ONLY
+
+// Rage-only melee-damage deltas. They turn +1/+2/+4 into +2/+4/+8 total.
+COPY_EXISTING ~c0brd1.spl~ ~override~
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 285 target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 1 END
+BUT_ONLY
+COPY_EXISTING ~c0brd2.spl~ ~override~
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 285 target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 2 END
+BUT_ONLY
+COPY_EXISTING ~c0brd3.spl~ ~override~
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 285 target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 4 END
+BUT_ONLY
+
+// Tier 1: 75% HP or less. Positive op284 worsens THAC0; positive op0 worsens AC.
+COPY_EXISTING ~c0bro1.spl~ ~override~
+  LPF srber_add_cleanup STR_VAR r1=~C0BRO1~ r2=~C0BRO2~ r3=~C0BRO3~ d1=~C0BRD1~ d2=~C0BRD2~ d3=~C0BRD3~ END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 284 target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 1 END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 285 target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 1 END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 0   target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 2 END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 142 target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter2 = c0ber#ic END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 326 target = 2 timing = 1 resist_dispel = 0 parameter2 = srber_enr_row STR_VAR resource = ~C0BRD1~ END
+BUT_ONLY
+
+// Tier 2: below 50% HP; +1/2 APR (opcode 1, parameter1 = 6).
+COPY_EXISTING ~c0bro2.spl~ ~override~
+  LPF srber_add_cleanup STR_VAR r1=~C0BRO1~ r2=~C0BRO2~ r3=~C0BRO3~ d1=~C0BRD1~ d2=~C0BRD2~ d3=~C0BRD3~ END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 284 target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 2 END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 285 target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 2 END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 0   target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 3 END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 1   target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 6 END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 142 target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter2 = c0ber#ic END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 326 target = 2 timing = 1 resist_dispel = 0 parameter2 = srber_enr_row STR_VAR resource = ~C0BRD2~ END
+BUT_ONLY
+
+// Tier 3: 25% HP or less; +1 APR.
+COPY_EXISTING ~c0bro3.spl~ ~override~
+  LPF srber_add_cleanup STR_VAR r1=~C0BRO1~ r2=~C0BRO2~ r3=~C0BRO3~ d1=~C0BRD1~ d2=~C0BRD2~ d3=~C0BRD3~ END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 284 target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 4 END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 285 target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 4 END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 0   target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 4 END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 1   target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 1 END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 142 target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter2 = c0ber#ic END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 326 target = 2 timing = 1 resist_dispel = 0 parameter2 = srber_enr_row STR_VAR resource = ~C0BRD3~ END
+BUT_ONLY
+
+// ---------------------------------------------------------------------------
+// Level 7: movement +1/+2/+4.
+// ---------------------------------------------------------------------------
+COPY_EXISTING ~c0bri7.spl~ ~override~
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 232 target = 2 timing = 9 resist_dispel = 2 parameter2 = 20 special = 76 STR_VAR resource = ~C0BRM1~ END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 232 target = 2 timing = 9 resist_dispel = 2 parameter2 = 20 special = 50 STR_VAR resource = ~C0BRM2~ END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 232 target = 2 timing = 9 resist_dispel = 2 parameter2 = 20 special = 26 STR_VAR resource = ~C0BRM3~ END
+BUT_ONLY
+
+COPY_EXISTING ~c0brm1.spl~ ~override~
+  LPF srber_add_cleanup STR_VAR r1=~C0BRM1~ r2=~C0BRM2~ r3=~C0BRM3~ END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 126 target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 1 END
+BUT_ONLY
+COPY_EXISTING ~c0brm2.spl~ ~override~
+  LPF srber_add_cleanup STR_VAR r1=~C0BRM1~ r2=~C0BRM2~ r3=~C0BRM3~ END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 126 target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 2 END
+BUT_ONLY
+COPY_EXISTING ~c0brm3.spl~ ~override~
+  LPF srber_add_cleanup STR_VAR r1=~C0BRM1~ r2=~C0BRM2~ r3=~C0BRM3~ END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 126 target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 4 END
+BUT_ONLY
+
+// ---------------------------------------------------------------------------
+// Level 10: all-save bonuses +1/+2/+4.
+// ---------------------------------------------------------------------------
+COPY_EXISTING ~c0bri10.spl~ ~override~
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 232 target = 2 timing = 9 resist_dispel = 2 parameter2 = 20 special = 76 STR_VAR resource = ~C0BRS1~ END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 232 target = 2 timing = 9 resist_dispel = 2 parameter2 = 20 special = 50 STR_VAR resource = ~C0BRS2~ END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 232 target = 2 timing = 9 resist_dispel = 2 parameter2 = 20 special = 26 STR_VAR resource = ~C0BRS3~ END
+BUT_ONLY
+
+COPY_EXISTING ~c0brs1.spl~ ~override~
+  LPF srber_add_cleanup STR_VAR r1=~C0BRS1~ r2=~C0BRS2~ r3=~C0BRS3~ END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 325 target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 1 END
+  LPF srber_set_signed_p1 INT_VAR match_op = 325 new_p1 = (0 - 1) END
+BUT_ONLY
+COPY_EXISTING ~c0brs2.spl~ ~override~
+  LPF srber_add_cleanup STR_VAR r1=~C0BRS1~ r2=~C0BRS2~ r3=~C0BRS3~ END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 325 target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 1 END
+  LPF srber_set_signed_p1 INT_VAR match_op = 325 new_p1 = (0 - 2) END
+BUT_ONLY
+COPY_EXISTING ~c0brs3.spl~ ~override~
+  LPF srber_add_cleanup STR_VAR r1=~C0BRS1~ r2=~C0BRS2~ r3=~C0BRS3~ END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 325 target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 1 END
+  LPF srber_set_signed_p1 INT_VAR match_op = 325 new_p1 = (0 - 4) END
+BUT_ONLY
+
+// ---------------------------------------------------------------------------
+// Level 14: physical resistance 3/6/10%, doubled while Enraged.
+// ---------------------------------------------------------------------------
+COPY_EXISTING ~c0bri14.spl~ ~override~
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 232 target = 2 timing = 9 resist_dispel = 2 parameter2 = 20 special = 76 STR_VAR resource = ~C0BRR1~ END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 232 target = 2 timing = 9 resist_dispel = 2 parameter2 = 20 special = 50 STR_VAR resource = ~C0BRR2~ END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 232 target = 2 timing = 9 resist_dispel = 2 parameter2 = 20 special = 26 STR_VAR resource = ~C0BRR3~ END
+BUT_ONLY
+
+COPY_EXISTING ~c0brx1.spl~ ~override~
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 86 target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 3 END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 87 target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 3 END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 88 target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 3 END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 89 target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 3 END
+BUT_ONLY
+COPY_EXISTING ~c0brx2.spl~ ~override~
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 86 target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 6 END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 87 target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 6 END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 88 target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 6 END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 89 target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 6 END
+BUT_ONLY
+COPY_EXISTING ~c0brx3.spl~ ~override~
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 86 target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 10 END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 87 target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 10 END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 88 target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 10 END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 89 target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 10 END
+BUT_ONLY
+
+COPY_EXISTING ~c0brr1.spl~ ~override~
+  LPF srber_add_cleanup STR_VAR r1=~C0BRR1~ r2=~C0BRR2~ r3=~C0BRR3~ d1=~C0BRX1~ d2=~C0BRX2~ d3=~C0BRX3~ END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 86 target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 3 END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 87 target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 3 END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 88 target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 3 END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 89 target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 3 END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 326 target = 2 timing = 1 resist_dispel = 0 parameter2 = srber_enr_row STR_VAR resource = ~C0BRX1~ END
+BUT_ONLY
+COPY_EXISTING ~c0brr2.spl~ ~override~
+  LPF srber_add_cleanup STR_VAR r1=~C0BRR1~ r2=~C0BRR2~ r3=~C0BRR3~ d1=~C0BRX1~ d2=~C0BRX2~ d3=~C0BRX3~ END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 86 target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 6 END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 87 target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 6 END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 88 target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 6 END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 89 target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 6 END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 326 target = 2 timing = 1 resist_dispel = 0 parameter2 = srber_enr_row STR_VAR resource = ~C0BRX2~ END
+BUT_ONLY
+COPY_EXISTING ~c0brr3.spl~ ~override~
+  LPF srber_add_cleanup STR_VAR r1=~C0BRR1~ r2=~C0BRR2~ r3=~C0BRR3~ d1=~C0BRX1~ d2=~C0BRX2~ d3=~C0BRX3~ END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 86 target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 10 END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 87 target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 10 END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 88 target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 10 END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 89 target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 10 END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 326 target = 2 timing = 1 resist_dispel = 0 parameter2 = srber_enr_row STR_VAR resource = ~C0BRX3~ END
+BUT_ONLY
+
+// ---------------------------------------------------------------------------
+// Level 20: Luck 0/+1/+2.
+// ---------------------------------------------------------------------------
+COPY_EXISTING ~c0bri20.spl~ ~override~
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 232 target = 2 timing = 9 resist_dispel = 2 parameter2 = 20 special = 76 STR_VAR resource = ~C0BRL1~ END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 232 target = 2 timing = 9 resist_dispel = 2 parameter2 = 20 special = 50 STR_VAR resource = ~C0BRL2~ END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 232 target = 2 timing = 9 resist_dispel = 2 parameter2 = 20 special = 26 STR_VAR resource = ~C0BRL3~ END
+BUT_ONLY
+
+COPY_EXISTING ~c0brl1.spl~ ~override~
+  LPF srber_add_cleanup STR_VAR r1=~C0BRL1~ r2=~C0BRL2~ r3=~C0BRL3~ END
+BUT_ONLY
+COPY_EXISTING ~c0brl2.spl~ ~override~
+  LPF srber_add_cleanup STR_VAR r1=~C0BRL1~ r2=~C0BRL2~ r3=~C0BRL3~ END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 22 target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 1 END
+BUT_ONLY
+COPY_EXISTING ~c0brl3.spl~ ~override~
+  LPF srber_add_cleanup STR_VAR r1=~C0BRL1~ r2=~C0BRL2~ r3=~C0BRL3~ END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 22 target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 2 END
+BUT_ONLY
+
+// ---------------------------------------------------------------------------
+// Berserker CLAB. Preserve Artisan Fighter Overhaul inheritance by keeping the
+// upstream CLABFI01 -> CLABFI02 model, then replace the old Berserker package with
+// the Sauler controllers and stock SPCL321 Enrage uses.
+// ---------------------------------------------------------------------------
+COPY_EXISTING ~CLABFI01.2DA~ ~OVERRIDE/CLABFI02.2DA~
+  // Keep upstream Fighter Overhaul integration policy unchanged unless the Sauler
+  // revision explicitly says otherwise.
+  REPLACE_TEXTUALLY ~GA_C0FIG02~ ~**** ~ // Expertise
+  REPLACE_TEXTUALLY ~GA_C0ARC03~ ~**** ~ // Rapid Shot
+  REPLACE_TEXTUALLY ~AP_C0ARC03Z~ ~**** ~
+  REPLACE_TEXTUALLY ~AP_C0FIG04~ ~**** ~ // Fighter Overhaul specialization passive
+
+  LPF set_clab_2da_entries INT_VAR f_MinLevel = 1  STR_VAR f_Entry = AP_C0BRI1  END
+  LPF set_clab_2da_entries INT_VAR f_MinLevel = 7  STR_VAR f_Entry = AP_C0BRI7  END
+  LPF set_clab_2da_entries INT_VAR f_MinLevel = 10 STR_VAR f_Entry = AP_C0BRI10 END
+  LPF set_clab_2da_entries INT_VAR f_MinLevel = 14 STR_VAR f_Entry = AP_C0BRI14 END
+  LPF set_clab_2da_entries INT_VAR f_MinLevel = 20 STR_VAR f_Entry = AP_C0BRI20 END
+  LPF set_clab_2da_entries INT_VAR f_MinLevel = 1 f_Increment = 4 STR_VAR f_Entry = GA_SPCL321 END
+
+  PRETTY_PRINT_2DA
+BUT_ONLY
+
+// ---------------------------------------------------------------------------
+// Enrage: keep the stock one-turn / Winded chassis and +15 temporary HP, remove
+// flat combat bonuses and overbroad immunities, and normalize the intended state.
+// SPCL321D is deliberately untouched.
+// ---------------------------------------------------------------------------
+OUTER_SET srber_charm_state = IDS_OF_SYMBOL (~splstate~ ~CHARM_IMMUNITY~)
+OUTER_SET srber_conf_state  = IDS_OF_SYMBOL (~splstate~ ~CONFUSION_IMMUNITY~)
+OUTER_SET srber_hold_state  = IDS_OF_SYMBOL (~splstate~ ~HOLD_IMMUNITY~)
+OUTER_SET srber_panic_state = IDS_OF_SYMBOL (~splstate~ ~PANIC_IMMUNITY~)
+OUTER_SET srber_sleep_state = IDS_OF_SYMBOL (~splstate~ ~SLEEP_IMMUNITY~)
+OUTER_SET srber_stun_state  = IDS_OF_SYMBOL (~splstate~ ~STUN_IMMUNITY~)
+OUTER_SET srber_feeb_state  = IDS_OF_SYMBOL (~splstate~ ~FEEBLEMIND_IMMUNITY~)
+
+COPY_EXISTING ~spcl321.spl~ ~override~
+  // Flat vanilla/legacy combat package. In Extremis now owns all combat scaling.
+  LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 0 END
+  LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 54 END
+  LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 73 END
+  LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 284 END
+  LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 285 END
+
+  // Normalize intended Enrage immunities before re-adding exactly one copy each.
+  LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 101 match_parameter2 = 5   END // charm
+  LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 101 match_parameter2 = 128 END // confusion
+  LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 101 match_parameter2 = 24  END // fear
+  LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 101 match_parameter2 = 175 END // hold
+  LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 101 match_parameter2 = 109 END // paralysis
+  LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 101 match_parameter2 = 39  END // sleep
+  LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 101 match_parameter2 = 217 END // unconsciousness
+  LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 101 match_parameter2 = 45  END // stun
+  LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 101 match_parameter2 = 210 END // Power Word: Stun
+  LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 101 match_parameter2 = 23  END // morale
+  LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 101 match_parameter2 = 106 END // morale break
+
+  // Explicitly unsupported immunities.
+  LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 101 match_parameter2 = 76  END // feeblemind
+  LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 101 match_parameter2 = 211 END // imprisonment
+  LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 101 match_parameter2 = 213 END // maze
+  LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 101 match_parameter2 = 216 END // level drain
+
+  // EE Fixpack feedback/VFX paired with protections we deliberately removed.
+  LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 296 STR_VAR match_resource = ~cdfeeble~ END
+  PATCH_IF (srber_feeb_state >= 0) BEGIN
+    LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 328 match_parameter2 = srber_feeb_state END
+  END
+  LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 282 match_parameter1 = 1 match_parameter2 = 2 END
+  LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 267 match_parameter1 = 41495 END
+  LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 267 match_parameter1 = 40968 END
+  LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 267 match_parameter1 = 40969 END
+  LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 267 match_parameter1 = 40979 END
+  LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 267 match_parameter1 = 41616 END
+
+  // Intended one-turn immunities.
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 101 target = 2 timing = 0 duration = 60 resist_dispel = 2 parameter2 = 5   END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 101 target = 2 timing = 0 duration = 60 resist_dispel = 2 parameter2 = 128 END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 101 target = 2 timing = 0 duration = 60 resist_dispel = 2 parameter2 = 24  END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 101 target = 2 timing = 0 duration = 60 resist_dispel = 2 parameter2 = 175 END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 101 target = 2 timing = 0 duration = 60 resist_dispel = 2 parameter2 = 109 END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 101 target = 2 timing = 0 duration = 60 resist_dispel = 2 parameter2 = 39  END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 101 target = 2 timing = 0 duration = 60 resist_dispel = 2 parameter2 = 217 END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 101 target = 2 timing = 0 duration = 60 resist_dispel = 2 parameter2 = 45  END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 101 target = 2 timing = 0 duration = 60 resist_dispel = 2 parameter2 = 210 END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 101 target = 2 timing = 0 duration = 60 resist_dispel = 2 parameter2 = 23  END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 101 target = 2 timing = 0 duration = 60 resist_dispel = 2 parameter2 = 106 END
+
+  // Explicit Enraged state used by In Extremis' conditional damage/resistance deltas.
+  LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 328 match_parameter2 = 104 END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 328 target = 2 timing = 0 duration = 60 resist_dispel = 2 parameter2 = 104 END
+
+  // Detectable-Spells states for SCS. Normalize first to avoid duplicate markers.
+  PATCH_IF (srber_charm_state >= 0) BEGIN
+    LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 328 match_parameter2 = srber_charm_state END
+    LPF ADD_SPELL_EFFECT INT_VAR opcode = 328 target = 2 timing = 0 duration = 60 resist_dispel = 2 parameter2 = srber_charm_state END
+  END
+  PATCH_IF (srber_conf_state >= 0) BEGIN
+    LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 328 match_parameter2 = srber_conf_state END
+    LPF ADD_SPELL_EFFECT INT_VAR opcode = 328 target = 2 timing = 0 duration = 60 resist_dispel = 2 parameter2 = srber_conf_state END
+  END
+  PATCH_IF (srber_hold_state >= 0) BEGIN
+    LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 328 match_parameter2 = srber_hold_state END
+    LPF ADD_SPELL_EFFECT INT_VAR opcode = 328 target = 2 timing = 0 duration = 60 resist_dispel = 2 parameter2 = srber_hold_state END
+  END
+  PATCH_IF (srber_panic_state >= 0) BEGIN
+    LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 328 match_parameter2 = srber_panic_state END
+    LPF ADD_SPELL_EFFECT INT_VAR opcode = 328 target = 2 timing = 0 duration = 60 resist_dispel = 2 parameter2 = srber_panic_state END
+  END
+  PATCH_IF (srber_sleep_state >= 0) BEGIN
+    LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 328 match_parameter2 = srber_sleep_state END
+    LPF ADD_SPELL_EFFECT INT_VAR opcode = 328 target = 2 timing = 0 duration = 60 resist_dispel = 2 parameter2 = srber_sleep_state END
+  END
+  PATCH_IF (srber_stun_state >= 0) BEGIN
+    LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 328 match_parameter2 = srber_stun_state END
+    LPF ADD_SPELL_EFFECT INT_VAR opcode = 328 target = 2 timing = 0 duration = 60 resist_dispel = 2 parameter2 = srber_stun_state END
+  END
+
+  // Normalize and apply spellcasting lockout while Enraged.
+  LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 145 match_parameter2 = 0 END
+  LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 145 match_parameter2 = 1 END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 145 target = 2 timing = 0 duration = 60 resist_dispel = 2 parameter2 = 0 special = 1 END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 145 target = 2 timing = 0 duration = 60 resist_dispel = 2 parameter2 = 1 special = 1 END
+
+  SAY NAME1 ~Enrage~
+  SAY UNIDENTIFIED_DESC ~Enrage
+For 1 turn, the Berserker gains 15 temporary Hit Points and becomes immune to charm, confusion, fear, hold, paralysis, sleep, unconsciousness, stun, Power Word: Stun, and morale failure. Enrage does not protect against feeblemind, maze, imprisonment, level drain, or death effects. The Berserker cannot cast wizard or priest spells while Enraged. After Enrage ends, the normal Berserker Winded/cooldown period applies.~
+BUT_ONLY
+
+// ---------------------------------------------------------------------------
+// Ranged weapon policy. Throwing axes/daggers/hammers remain governed by their
+// melee weapon proficiencies; ranged-only groups are capped at one pip.
+// ---------------------------------------------------------------------------
+COPY_EXISTING ~weapprof.2da~ ~override~
+  LPF srber_enforce_ranged_cap END
+  PRETTY_PRINT_2DA
+BUT_ONLY
+
+// ---------------------------------------------------------------------------
+// Kit description. Preserve upstream Fighter Overhaul-specific restrictions.
+// ---------------------------------------------------------------------------
+OUTER_SPRINT kit_description ~BERSERKER: Berserkers surrender discipline for raw violence, fighting more ferociously as wounds accumulate. Their strength is greatest at close range and under Enrage, but reckless swings and an open guard make low-health fighting genuinely dangerous.
+
+Advantages:
+– Immune to involuntary berserk effects.
+– Gains In Extremis.
+
+IN EXTREMIS: At 75% Hit Points or less, the Berserker suffers a -1 penalty to melee attack rolls, gains +1 melee damage, and suffers a 2-point Armor Class penalty. Below 50% Hit Points these values become -2 to hit, +2 damage, a 3-point Armor Class penalty, and +1/2 attack per round. At 25% Hit Points or less they become -4 to hit, +4 damage, a 4-point Armor Class penalty, and +1 attack per round. While Enraged, the melee damage bonuses double to +2/+4/+8.
+
+– 7th level: In Extremis also grants +1/+2/+4 movement rate.
+– 10th level: In Extremis also grants +1/+2/+4 to all Saving Throws.
+– 14th level: In Extremis also grants 3%/6%/10% resistance to slashing, crushing, piercing, and missile damage. While Enraged, these totals double to 6%/12%/20%.
+– 20th level: In Extremis grants no Luck bonus at the first tier, +1 Luck below 50% Hit Points, and +2 Luck at 25% Hit Points or less.
+– May use Enrage once per day at 1st level and gains one additional use every 4 levels thereafter.
+
+ENRAGE: For 1 turn, the Berserker gains 15 temporary Hit Points and becomes immune to charm, confusion, fear, hold, paralysis, sleep, unconsciousness, stun, Power Word: Stun, and morale failure. Enrage does not protect against feeblemind, maze, imprisonment, level drain, or death effects. The Berserker cannot cast wizard or priest spells while Enraged. After Enrage ends, the normal Berserker Winded/cooldown period applies.
+
+Disadvantages:
+– May not Specialize in ranged-only weapon categories.KIT_DISADV_1
+– Alignment restricted to any non-lawful.~
+
+ACTION_IF MOD_IS_INSTALLED ~Setup-ArtisansKitpack.tp2~ ~1100~ THEN BEGIN
+  OUTER_PATCH_SAVE kit_description ~%kit_description%~ BEGIN
+    REPLACE_TEXTUALLY ~KIT_DISADV_1~ ~
+– May not use Expertise or Rapid Shot.
+– Does not gain Specialization in all weapons at 16th level.~
+  END
+END ELSE BEGIN
+  OUTER_PATCH_SAVE kit_description ~%kit_description%~ BEGIN
+    REPLACE_TEXTUALLY ~KIT_DISADV_1~ ~~
+  END
+END
+
+LAF ~GET_KIT_STRREF~ STR_VAR kit_name = ~BERSERKER~ RET kit_strref END
+STRING_SET_EVALUATE kit_strref ~%kit_description%~
+
+// HLA policy: deliberately do not modify LUABBR/LUFI0, do not remove Hardiness,
+// and do not install Artisan's Extend Rage. S&A #710/#720 can therefore extend
+// the Fighter HLA pool and patch SPCL907 without a conflict from this component.
