@@ -16,16 +16,6 @@ jobs:
       - name: Check out QA branch
         uses: actions/checkout@v4
 
-      - name: Materialize standalone source payload
-        shell: bash
-        run: |
-          set -euo pipefail
-          mkdir -p /tmp/brkqa
-          cat standalone-qa/chunk00.txt standalone-qa/chunk01.txt standalone-qa/chunk02.txt standalone-qa/chunk03.txt \
-            | base64 -d \
-            | tar -xzf - -C /tmp/brkqa
-          find /tmp/brkqa -maxdepth 5 -type f -print
-
       - name: Download WeiDU 249.00
         shell: bash
         run: |
@@ -41,12 +31,14 @@ jobs:
           echo "WEIDU=$WEIDU" >> "$GITHUB_ENV"
           "$WEIDU" --version
 
-      - name: Parse standalone sources with WeiDU 249
+      - name: Parse standalone alpha2 source sections
         shell: bash
-        working-directory: /tmp/brkqa
         run: |
           set -euo pipefail
-          "$WEIDU" --parse-check TPH BerserkerRevisedKIT/lib/functions.tph
-          "$WEIDU" --parse-check TPA BerserkerRevisedKIT/lib/main.tpa
-          "$WEIDU" --parse-check TPA BerserkerRevisedKIT/lib/compat_saa54.tpa
-          "$WEIDU" --parse-check TP2 Setup-BerserkerRevisedKIT.tp2
+          "$WEIDU" --parse-check TPH standalone-parser/functions_part1.tph
+          "$WEIDU" --parse-check TPH standalone-parser/functions_part2.tph
+          "$WEIDU" --parse-check TPA standalone-parser/main_part1.tpa
+          "$WEIDU" --parse-check TPA standalone-parser/main_part2.tpa
+          "$WEIDU" --parse-check TPA standalone-parser/main_part3.tpa
+          "$WEIDU" --parse-check TPA standalone-parser/compat_saa54.tpa
+          "$WEIDU" --parse-check TP2 standalone-parser/Setup-BerserkerRevisedKIT.tp2
