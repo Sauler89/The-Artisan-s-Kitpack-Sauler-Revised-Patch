@@ -1,0 +1,72 @@
+// Berserker Revised KIT v0.1.0-alpha2
+// Late compatibility tail for the user-supplied Skills and Abilities v5.4.
+// Intended order: BRK core -> optional general tweaks -> S&A -> this component -> EET_END (if applicable).
+
+OUTER_SET brk_saa150 = 0
+OUTER_SET brk_saaprof = 0
+
+ACTION_IF MOD_IS_INSTALLED ~skills-and-abilities/skills-and-abilities.tp2~ 150 BEGIN
+  OUTER_SET brk_saa150 = 1
+END
+ACTION_IF (MOD_IS_INSTALLED ~skills-and-abilities/skills-and-abilities.tp2~ 311)
+       OR (MOD_IS_INSTALLED ~skills-and-abilities/skills-and-abilities.tp2~ 312)
+       OR (MOD_IS_INSTALLED ~skills-and-abilities/skills-and-abilities.tp2~ 313) BEGIN
+  OUTER_SET brk_saaprof = 1
+END
+// Reassert the core casting policy after S&A/late table edits. AP_SPCL322 is the
+// stock permanent "Disable Magic casting button" CLAB spell; Revised KIT instead
+// blocks wizard/priest casting only for the 60 seconds of Enrage via opcode 145.
+COPY_EXISTING ~clabfi02.2da~ ~override~
+  REPLACE_TEXTUALLY CASE_INSENSITIVE EXACT_MATCH ~AP_SPCL322~ ~****~
+  COUNT_REGEXP_INSTANCES CASE_INSENSITIVE EXACT_MATCH ~AP_SPCL322~ brk_spcl322_left
+  PATCH_IF (brk_spcl322_left > 0) BEGIN
+    PATCH_FAIL ~Berserker Revised KIT: AP_SPCL322 remained after S&A compatibility normalization.~
+  END
+BUT_ONLY
+
+// #150: S&A deliberately grants these Fighter abilities to Fighter kits, including
+// BERSERKER. Re-add only if a later CLAB edit displaced one; never duplicate them.
+ACTION_IF brk_saa150 BEGIN
+  COPY_EXISTING ~clabfi02.2da~ ~override~
+    PATCH_IF FILE_EXISTS_IN_GAME ~mo2wind.spl~ BEGIN
+      LPF BRK_ENSURE_CLAB_ENTRY INT_VAR level = 1 STR_VAR entry = ~GA_MO2WIND~ END
+    END
+    PATCH_IF FILE_EXISTS_IN_GAME ~mo#ind01.spl~ BEGIN
+      LPF BRK_ENSURE_CLAB_ENTRY INT_VAR level = 9 STR_VAR entry = ~AP_MO#IND01~ END
+    END
+    PATCH_IF FILE_EXISTS_IN_GAME ~mo#ind02.spl~ BEGIN
+      LPF BRK_ENSURE_CLAB_ENTRY INT_VAR level = 13 STR_VAR entry = ~AP_MO#IND02~ END
+    END
+    PATCH_IF FILE_EXISTS_IN_GAME ~mo#ind03.spl~ BEGIN
+      LPF BRK_ENSURE_CLAB_ENTRY INT_VAR level = 17 STR_VAR entry = ~AP_MO#IND03~ END
+    END
+    // In S&A 5.4 fighter_overhaul is hard-set false; #150 therefore grants this
+    // unconditional +0.5 APR at Fighter level 20 to Fighter kits.
+    PATCH_IF FILE_EXISTS_IN_GAME ~mo#apb01.spl~ BEGIN
+      LPF BRK_ENSURE_CLAB_ENTRY INT_VAR level = 20 STR_VAR entry = ~AP_MO#APB01~ END
+    END
+    PRETTY_PRINT_2DA
+  BUT_ONLY
+END
+
+// #311/#312/#313: after S&A has rebuilt WEAPPROF into consolidated weapon groups,
+// normalize only the actual ranged weapon groups. Preserve Armor, Conditioning,
+// Swiftblade, Thrown, Archery, Spellcraft, Devotion, Concentration, etc.
+ACTION_IF brk_saaprof BEGIN
+  COPY_EXISTING ~weapprof.2da~ ~override~
+    LPF BRK_ENFORCE_RANGED_CAP END
+    PRETTY_PRINT_2DA
+  BUT_ONLY
+END
+
+// #710/#720 require no mechanical patch: BRK never replaces fighter HLA tables or
+// SPCL907, so S&A's new epic HLAs and its undispellable Hardiness update survive.
+
+// If #150 is active, show the actual combined Fighter progression in the stock kit text.
+ACTION_IF brk_saa150 BEGIN
+  LAF BRK_GET_KIT_STRREF STR_VAR kit_name = ~BERSERKER~ RET brk_kit_strref = kit_strref END
+  ACTION_IF (brk_kit_strref >= 0) BEGIN
+    OUTER_SPRINT brk_kit_text @201
+    STRING_SET_EVALUATE brk_kit_strref ~%brk_kit_text%~
+  END
+END
