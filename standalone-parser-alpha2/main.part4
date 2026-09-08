@@ -7,34 +7,34 @@
 
   // Mark Rage explicitly for the In Extremis opcode-326 branches.
   LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 328 match_parameter2 = 104 END
-  LPF ADD_SPELL_EFFECT INT_VAR opcode = 328 target = 2 timing = 0 duration = 60 resist_dispel = 2 parameter2 = 104 END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 328 target = 2 timing = 0 duration = 60 resist_dispel = 2 special = 1 parameter2 = 104 END
 
   // Interoperability markers for AI/scripting systems. Resolve symbols dynamically.
   // Normalize stock/EE Fixpack copies first so the final spell exposes one canonical
   // marker per intended immunity. Missing symbols resolve to -1 and are skipped.
   PATCH_IF (brk_charm_state >= 0) BEGIN
     LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 328 match_parameter2 = brk_charm_state END
-    LPF ADD_SPELL_EFFECT INT_VAR opcode = 328 target = 2 timing = 0 duration = 60 resist_dispel = 2 parameter2 = brk_charm_state END
+    LPF ADD_SPELL_EFFECT INT_VAR opcode = 328 target = 2 timing = 0 duration = 60 resist_dispel = 2 special = 1 parameter2 = brk_charm_state END
   END
   PATCH_IF (brk_conf_state >= 0) BEGIN
     LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 328 match_parameter2 = brk_conf_state END
-    LPF ADD_SPELL_EFFECT INT_VAR opcode = 328 target = 2 timing = 0 duration = 60 resist_dispel = 2 parameter2 = brk_conf_state END
+    LPF ADD_SPELL_EFFECT INT_VAR opcode = 328 target = 2 timing = 0 duration = 60 resist_dispel = 2 special = 1 parameter2 = brk_conf_state END
   END
   PATCH_IF (brk_hold_state >= 0) BEGIN
     LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 328 match_parameter2 = brk_hold_state END
-    LPF ADD_SPELL_EFFECT INT_VAR opcode = 328 target = 2 timing = 0 duration = 60 resist_dispel = 2 parameter2 = brk_hold_state END
+    LPF ADD_SPELL_EFFECT INT_VAR opcode = 328 target = 2 timing = 0 duration = 60 resist_dispel = 2 special = 1 parameter2 = brk_hold_state END
   END
   PATCH_IF (brk_panic_state >= 0) BEGIN
     LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 328 match_parameter2 = brk_panic_state END
-    LPF ADD_SPELL_EFFECT INT_VAR opcode = 328 target = 2 timing = 0 duration = 60 resist_dispel = 2 parameter2 = brk_panic_state END
+    LPF ADD_SPELL_EFFECT INT_VAR opcode = 328 target = 2 timing = 0 duration = 60 resist_dispel = 2 special = 1 parameter2 = brk_panic_state END
   END
   PATCH_IF (brk_sleep_state >= 0) BEGIN
     LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 328 match_parameter2 = brk_sleep_state END
-    LPF ADD_SPELL_EFFECT INT_VAR opcode = 328 target = 2 timing = 0 duration = 60 resist_dispel = 2 parameter2 = brk_sleep_state END
+    LPF ADD_SPELL_EFFECT INT_VAR opcode = 328 target = 2 timing = 0 duration = 60 resist_dispel = 2 special = 1 parameter2 = brk_sleep_state END
   END
   PATCH_IF (brk_stun_state >= 0) BEGIN
     LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 328 match_parameter2 = brk_stun_state END
-    LPF ADD_SPELL_EFFECT INT_VAR opcode = 328 target = 2 timing = 0 duration = 60 resist_dispel = 2 parameter2 = brk_stun_state END
+    LPF ADD_SPELL_EFFECT INT_VAR opcode = 328 target = 2 timing = 0 duration = 60 resist_dispel = 2 special = 1 parameter2 = brk_stun_state END
   END
 
   // A raging dual/multiclass character cannot cast arcane or divine spells.
