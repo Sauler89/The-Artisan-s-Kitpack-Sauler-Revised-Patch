@@ -1,0 +1,120 @@
+// Berserker Revised KIT - local WeiDU helpers
+
+// Delete every effect from an SPL shell while preserving its headers/metadata.
+DEFINE_PATCH_FUNCTION BRK_CLEAR_EFFECTS BEGIN
+  FOR (brk_op = 0; brk_op <= 500; ++brk_op) BEGIN
+    LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = brk_op END
+  END
+END
+
+// WeiDU's high-level effect helpers are awkward with signed p1 values on some builds.
+// Write parameter1 directly in all extended headers matching an opcode.
+DEFINE_PATCH_FUNCTION BRK_SET_SIGNED_P1
+  INT_VAR match_op = 0
+          new_p1   = 0
+BEGIN
+  READ_LONG  0x64 brk_abil_off
+  READ_SHORT 0x68 brk_abil_num
+  READ_LONG  0x6a brk_fx_off
+  FOR (brk_i = 0; brk_i < brk_abil_num; ++brk_i) BEGIN
+    READ_SHORT (brk_abil_off + brk_i * 0x28 + 0x1e) brk_nfx
+    READ_SHORT (brk_abil_off + brk_i * 0x28 + 0x20) brk_first
+    FOR (brk_j = 0; brk_j < brk_nfx; ++brk_j) BEGIN
+      READ_SHORT (brk_fx_off + (brk_first + brk_j) * 0x30) brk_cur_op
+      PATCH_IF (brk_cur_op = match_op) BEGIN
+        WRITE_LONG (brk_fx_off + (brk_first + brk_j) * 0x30 + 0x04) new_p1
+      END
+    END
+  END
+END
+
+// Add an AP_/GA_ entry to the first free cell at the requested level without
+// replacing other mods' CLAB entries. Fails loudly rather than destroying data.
+DEFINE_PATCH_FUNCTION BRK_SET_CLAB_ENTRY
+  INT_VAR level = 1
+  STR_VAR entry = ~~
+BEGIN
+  COUNT_2DA_COLS brk_cols
+  READ_2DA_ENTRIES_NOW brk_clab brk_cols
+  SET brk_done = 0
+  FOR (brk_row = 0; brk_row < brk_clab; ++brk_row) BEGIN
+    READ_2DA_ENTRY_FORMER brk_clab brk_row level brk_cell
+    PATCH_IF (!brk_done AND (~%brk_cell%~ STRING_EQUAL_CASE ~****~)) BEGIN
+      SET_2DA_ENTRY_LATER ~brk_clabw~ brk_row level ~%entry%~
+      SET brk_done = 1
+    END
+  END
+  PATCH_IF (!brk_done) BEGIN
+    PATCH_FAIL ~Berserker Revised KIT: no free CLABFI02 cell at level %level%.~
+  END
+  SET_2DA_ENTRIES_NOW ~brk_clabw~ brk_cols
+END
+
+// Common cleanup at the start of a threshold spell. Effects from the previous
+// tier expire immediately instead of coexisting for the 12-second refresh window.
+DEFINE_PATCH_FUNCTION BRK_ADD_CLEANUP
+  STR_VAR r1 = ~~ r2 = ~~ r3 = ~~ d1 = ~~ d2 = ~~ d3 = ~~
+BEGIN
+  PATCH_IF (STRING_LENGTH ~%r1%~ > 0) BEGIN
+    LPF ADD_SPELL_EFFECT INT_VAR opcode = 321 target = 2 timing = 0 resist_dispel = 2 parameter1 = 8 insert_point = 0 STR_VAR resource = EVAL ~%r1%~ END
+  END
+  PATCH_IF (STRING_LENGTH ~%r2%~ > 0) BEGIN
+    LPF ADD_SPELL_EFFECT INT_VAR opcode = 321 target = 2 timing = 0 resist_dispel = 2 parameter1 = 8 insert_point = 0 STR_VAR resource = EVAL ~%r2%~ END
+  END
+  PATCH_IF (STRING_LENGTH ~%r3%~ > 0) BEGIN
+    LPF ADD_SPELL_EFFECT INT_VAR opcode = 321 target = 2 timing = 0 resist_dispel = 2 parameter1 = 8 insert_point = 0 STR_VAR resource = EVAL ~%r3%~ END
+  END
+  PATCH_IF (STRING_LENGTH ~%d1%~ > 0) BEGIN
+    LPF ADD_SPELL_EFFECT INT_VAR opcode = 321 target = 2 timing = 0 resist_dispel = 2 parameter1 = 8 insert_point = 0 STR_VAR resource = EVAL ~%d1%~ END
+  END
+  PATCH_IF (STRING_LENGTH ~%d2%~ > 0) BEGIN
+    LPF ADD_SPELL_EFFECT INT_VAR opcode = 321 target = 2 timing = 0 resist_dispel = 2 parameter1 = 8 insert_point = 0 STR_VAR resource = EVAL ~%d2%~ END
+  END
+  PATCH_IF (STRING_LENGTH ~%d3%~ > 0) BEGIN
+    LPF ADD_SPELL_EFFECT INT_VAR opcode = 321 target = 2 timing = 0 resist_dispel = 2 parameter1 = 8 insert_point = 0 STR_VAR resource = EVAL ~%d3%~ END
+  END
+END
+
+// Remove every exact AP_/GA_ token from a CLAB while preserving all unrelated
+// entries. Used for vanilla AP_SPCL322: Revised KIT controls spellcasting only
+// while Enraged via opcode 145, so the permanent Disable Magic button effect
+// must not remain in the Berserker CLAB.
+DEFINE_PATCH_FUNCTION BRK_REMOVE_CLAB_ENTRY
+  STR_VAR entry = ~~
+BEGIN
+  COUNT_2DA_COLS brk_cols
+  READ_2DA_ENTRIES_NOW brk_clab brk_cols
+  SET brk_removed = 0
+  FOR (brk_row = 0; brk_row < brk_clab; ++brk_row) BEGIN
+    FOR (brk_col = 1; brk_col < brk_cols; ++brk_col) BEGIN
+      READ_2DA_ENTRY_FORMER brk_clab brk_row brk_col brk_cell
+      PATCH_IF (~%brk_cell%~ STRING_EQUAL_CASE ~%entry%~) BEGIN
+        SET_2DA_ENTRY_LATER ~brk_clabrm~ brk_row brk_col ~****~
+        SET brk_removed += 1
+      END
+    END
+  END
+  PATCH_IF (brk_removed > 0) BEGIN
+    SET_2DA_ENTRIES_NOW ~brk_clabrm~ brk_cols
+  END
+END
+
+// Ensure an AP_/GA_ entry exists at a specific level. Unlike BRK_SET_CLAB_ENTRY,
+// this is idempotent and is intended for late compatibility tails.
+DEFINE_PATCH_FUNCTION BRK_ENSURE_CLAB_ENTRY
+  INT_VAR level = 1
+  STR_VAR entry = ~~
+BEGIN
+  COUNT_2DA_COLS brk_cols
+  READ_2DA_ENTRIES_NOW brk_clab brk_cols
+  SET brk_found = 0
+  FOR (brk_row = 0; brk_row < brk_clab; ++brk_row) BEGIN
+    READ_2DA_ENTRY_FORMER brk_clab brk_row level brk_cell
+    PATCH_IF (~%brk_cell%~ STRING_EQUAL_CASE ~%entry%~) BEGIN
+      SET brk_found = 1
+    END
+  END
+  PATCH_IF (!brk_found) BEGIN
+    LPF BRK_SET_CLAB_ENTRY INT_VAR level = level STR_VAR entry = EVAL ~%entry%~ END
+  END
+END
