@@ -1,0 +1,34 @@
+BACKUP ~BerserkerRevisedKIT/backup~
+AUTHOR ~Sauler89~
+VERSION ~v0.1.0-alpha2~
+
+LANGUAGE ~English~ ~english~ ~BerserkerRevisedKIT/tra/english/setup.tra~
+LANGUAGE ~Italiano~ ~italian~ ~BerserkerRevisedKIT/tra/italian/setup.tra~
+
+INCLUDE ~BerserkerRevisedKIT/lib/functions.tph~
+
+BEGIN @100
+DESIGNATED 0
+REQUIRE_PREDICATE GAME_IS ~bg2ee eet~ @900
+REQUIRE_PREDICATE FILE_EXISTS_IN_GAME ~clabfi02.2da~ @901
+REQUIRE_PREDICATE FILE_EXISTS_IN_GAME ~spcl321.spl~ @907
+REQUIRE_PREDICATE FILE_EXISTS_IN_GAME ~weapprof.2da~ @908
+REQUIRE_PREDICATE FILE_EXISTS_IN_GAME ~kitlist.2da~ @909
+// The official Kitpack and the Chriz fork use the same internal component architecture.
+FORBID_COMPONENT ~ArtisansKitpack/ArtisansKitpack.tp2~ 1003 @902
+// Keep the setup-name alias too for older/repacked distributions.
+FORBID_COMPONENT ~setup-artisanskitpack.tp2~ 1003 @902
+FORBID_COMPONENT ~Setup-BerserkerReforged.tp2~ 1000 @905
+// Older/manually modified S&A releases may expose component 190, which rewrites SPCL321.
+// S&A 5.4 ships that component commented out; if it is ever present, do not stack it.
+FORBID_COMPONENT ~skills-and-abilities/skills-and-abilities.tp2~ 190 @906
+
+INCLUDE ~BerserkerRevisedKIT/lib/main.tpa~
+
+BEGIN @110
+DESIGNATED 10
+REQUIRE_COMPONENT ~Setup-BerserkerRevisedKIT.tp2~ 0 @903
+REQUIRE_PREDICATE (MOD_IS_INSTALLED ~skills-and-abilities/skills-and-abilities.tp2~ 150) OR (MOD_IS_INSTALLED ~skills-and-abilities/skills-and-abilities.tp2~ 311) OR (MOD_IS_INSTALLED ~skills-and-abilities/skills-and-abilities.tp2~ 312) OR (MOD_IS_INSTALLED ~skills-and-abilities/skills-and-abilities.tp2~ 313) @904
+FORBID_COMPONENT ~skills-and-abilities/skills-and-abilities.tp2~ 190 @906
+
+INCLUDE ~BerserkerRevisedKIT/lib/compat_saa54.tpa~
