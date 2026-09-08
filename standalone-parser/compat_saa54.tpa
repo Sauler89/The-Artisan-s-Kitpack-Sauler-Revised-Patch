@@ -1,0 +1,45 @@
+// Berserker Revised KIT v0.1.0-alpha2
+OUTER_SET brk_saa150 = 0
+OUTER_SET brk_saaprof = 0
+ACTION_IF MOD_IS_INSTALLED ~skills-and-abilities/skills-and-abilities.tp2~ 150 BEGIN
+  OUTER_SET brk_saa150 = 1
+END
+ACTION_IF (MOD_IS_INSTALLED ~skills-and-abilities/skills-and-abilities.tp2~ 311)
+       OR (MOD_IS_INSTALLED ~skills-and-abilities/skills-and-abilities.tp2~ 312)
+       OR (MOD_IS_INSTALLED ~skills-and-abilities/skills-and-abilities.tp2~ 313) BEGIN
+  OUTER_SET brk_saaprof = 1
+END
+ACTION_IF brk_saa150 BEGIN
+  COPY_EXISTING ~clabfi02.2da~ ~override~
+    LPF BRK_REMOVE_CLAB_ENTRY STR_VAR entry = ~AP_SPCL322~ END
+    PATCH_IF FILE_EXISTS_IN_GAME ~mo2wind.spl~ BEGIN
+      LPF BRK_ENSURE_CLAB_ENTRY INT_VAR level = 1 STR_VAR entry = ~GA_MO2WIND~ END
+    END
+    PATCH_IF FILE_EXISTS_IN_GAME ~mo#ind01.spl~ BEGIN
+      LPF BRK_ENSURE_CLAB_ENTRY INT_VAR level = 9 STR_VAR entry = ~AP_MO#IND01~ END
+    END
+    PATCH_IF FILE_EXISTS_IN_GAME ~mo#ind02.spl~ BEGIN
+      LPF BRK_ENSURE_CLAB_ENTRY INT_VAR level = 13 STR_VAR entry = ~AP_MO#IND02~ END
+    END
+    PATCH_IF FILE_EXISTS_IN_GAME ~mo#ind03.spl~ BEGIN
+      LPF BRK_ENSURE_CLAB_ENTRY INT_VAR level = 17 STR_VAR entry = ~AP_MO#IND03~ END
+    END
+    PATCH_IF FILE_EXISTS_IN_GAME ~mo#apb01.spl~ BEGIN
+      LPF BRK_ENSURE_CLAB_ENTRY INT_VAR level = 20 STR_VAR entry = ~AP_MO#APB01~ END
+    END
+    PRETTY_PRINT_2DA
+  BUT_ONLY
+END
+ACTION_IF brk_saaprof BEGIN
+  COPY_EXISTING ~weapprof.2da~ ~override~
+    LPF BRK_ENFORCE_RANGED_CAP END
+    PRETTY_PRINT_2DA
+  BUT_ONLY
+END
+ACTION_IF brk_saa150 BEGIN
+  LAF BRK_GET_KIT_STRREF STR_VAR kit_name = ~BERSERKER~ RET brk_kit_strref = kit_strref END
+  ACTION_IF (brk_kit_strref >= 0) BEGIN
+    OUTER_SPRINT brk_kit_text @201
+    STRING_SET_EVALUATE brk_kit_strref ~%brk_kit_text%~
+  END
+END
