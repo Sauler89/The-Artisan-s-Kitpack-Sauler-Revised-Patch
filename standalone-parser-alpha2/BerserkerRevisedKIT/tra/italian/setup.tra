@@ -1,0 +1,56 @@
+@100 = ~Berserker Revised KIT~
+@110 = ~Compatibilità finale con Skills and Abilities v5.4~
+@200 = ~BERSERKER: I Berserker sacrificano la disciplina in favore della violenza pura, combattendo con ferocia crescente man mano che accumulano ferite. La loro forza raggiunge l'apice nel corpo a corpo e durante la Furia, ma i colpi sconsiderati e la guardia aperta rendono davvero pericoloso combattere con pochi Punti Ferita.
+
+Vantaggi:
+– Immune agli effetti di berserk involontari.
+– Ottiene In Extremis.
+
+IN EXTREMIS: Quando si trova al 75% dei Punti Ferita o meno, il Berserker subisce una penalità di -1 ai tiri per colpire in mischia, ottiene +1 ai danni in mischia e subisce una penalità di 2 alla Classe Armatura. Sotto il 50% dei Punti Ferita, i valori diventano -2 al tiro per colpire, +2 ai danni, penalità di 3 alla Classe Armatura e +1/2 attacco per round. Sotto il 25% diventano -4 al tiro per colpire, +4 ai danni, penalità di 4 alla Classe Armatura e +1 attacco per round. Durante la Furia, i bonus ai danni in mischia raddoppiano a +2/+4/+8.
+
+– 7° livello: In Extremis conferisce anche +1/+2/+4 alla velocità di movimento.
+– 10° livello: In Extremis conferisce anche +1/+2/+4 a tutti i Tiri Salvezza.
+– 14° livello: In Extremis conferisce anche 3%/6%/10% di resistenza ai danni taglienti, contundenti, perforanti e da proiettile. Durante la Furia, questi valori totali raddoppiano a 6%/12%/20%.
+– 20° livello: sotto il 50%/25% dei Punti Ferita ottiene +1/+2 alla Fortuna.
+– Può usare Furia una volta al giorno al 1° livello e ottiene un uso aggiuntivo ogni 4 livelli successivi.
+
+FURIA: Per 1 turno, il Berserker ottiene 15 Punti Ferita temporanei e diventa immune a Charme, Confusione, Paura, Blocco, Paralisi, Sonno, Incoscienza, Stordimento, Parola del Potere: Stordire e Fallimento del Morale. Furia non protegge da Debolezza Mentale, Labirinto, Imprigionamento, Risucchio di Livello o effetti di morte. Il Berserker non può lanciare incantesimi arcani o divini durante la Furia. Durante la Furia raddoppiano i bonus ai danni in mischia di In Extremis e, dal 14° livello, i bonus alla resistenza fisica. Al termine si applicano il normale affaticamento e il periodo di recupero del Berserker.
+
+Svantaggi:
+– Non può ottenere la Specializzazione nelle categorie di armi esclusivamente a distanza.
+– Allineamento limitato a qualsiasi allineamento non legale.~
+
+@201 = ~BERSERKER: I Berserker sacrificano la disciplina in favore della violenza pura, combattendo con ferocia crescente man mano che accumulano ferite. La loro forza raggiunge l'apice nel corpo a corpo e durante la Furia, ma i colpi sconsiderati e la guardia aperta rendono davvero pericoloso combattere con pochi Punti Ferita.
+
+Vantaggi:
+– Immune agli effetti di berserk involontari.
+– Ottiene In Extremis.
+
+IN EXTREMIS: Quando si trova al 75% dei Punti Ferita o meno, il Berserker subisce una penalità di -1 ai tiri per colpire in mischia, ottiene +1 ai danni in mischia e subisce una penalità di 2 alla Classe Armatura. Sotto il 50% dei Punti Ferita, i valori diventano -2 al tiro per colpire, +2 ai danni, penalità di 3 alla Classe Armatura e +1/2 attacco per round. Sotto il 25% diventano -4 al tiro per colpire, +4 ai danni, penalità di 4 alla Classe Armatura e +1 attacco per round. Durante la Furia, i bonus ai danni in mischia raddoppiano a +2/+4/+8.
+
+– 7° livello: In Extremis conferisce anche +1/+2/+4 alla velocità di movimento.
+– 10° livello: In Extremis conferisce anche +1/+2/+4 a tutti i Tiri Salvezza.
+– 14° livello: In Extremis conferisce anche 3%/6%/10% di resistenza ai danni taglienti, contundenti, perforanti e da proiettile. Durante la Furia, questi valori totali raddoppiano a 6%/12%/20%.
+– 20° livello: sotto il 50%/25% dei Punti Ferita ottiene +1/+2 alla Fortuna.
+– Può usare Furia una volta al giorno al 1° livello e ottiene un uso aggiuntivo ogni 4 livelli successivi.
+
+FURIA: Per 1 turno, il Berserker ottiene 15 Punti Ferita temporanei e diventa immune a Charme, Confusione, Paura, Blocco, Paralisi, Sonno, Incoscienza, Stordimento, Parola del Potere: Stordire e Fallimento del Morale. Furia non protegge da Debolezza Mentale, Labirinto, Imprigionamento, Risucchio di Livello o effetti di morte. Il Berserker non può lanciare incantesimi arcani o divini durante la Furia. Durante la Furia raddoppiano i bonus ai danni in mischia di In Extremis e, dal 14° livello, i bonus alla resistenza fisica. Al termine si applicano il normale affaticamento e il periodo di recupero del Berserker.
+
+SKILLS AND ABILITIES v5.4: Se è installato il componente Aggiungi nuove capacità al Guerriero (#150), il Berserker ottiene anche Recuperare Energie una volta al giorno al 1° livello, Incrollabile (+1 a tutti i Tiri Salvezza al 9° livello, +2 al 13°, +3 al 17°) e +1/2 attacco per round permanente al 20° livello. Queste capacità fanno parte della progressione del Guerriero e si sommano a In Extremis.
+
+Svantaggi:
+– Non può ottenere la Specializzazione nelle categorie di armi esclusivamente a distanza.
+– Allineamento limitato a qualsiasi allineamento non legale.~
+
+@900 = ~Berserker Revised KIT richiede Baldur's Gate II: Enhanced Edition o EET.~
+@901 = ~Berserker Revised KIT non ha trovato CLABFI02.2DA.~
+@902 = ~Berserker Revised KIT non è compatibile con Berserker Overhaul di Artisan (componente 1003), incluso il fork Chriz Balance Patch. Installa un solo overhaul del Berserker.~
+@903 = ~Installa prima il componente principale (#0) di Berserker Revised KIT.~
+@904 = ~Questo componente di compatibilità finale richiede Skills and Abilities #150 oppure l’Overhaul delle Competenze #311/#312/#313. I componenti HLA #710/#720 sono già compatibili e non richiedono il tail.~
+@906 = ~Berserker Revised KIT non è compatibile con il vecchio componente #190 di Skills and Abilities (Aggiorna la capacità Furia del Berserker). In Skills and Abilities v5.4 tale componente è disattivato/commentato.~
+@300 = ~Furia~
+@301 = ~FURIA: Per 1 turno, il Berserker ottiene 15 Punti Ferita temporanei e diventa immune a Charme, Confusione, Paura, Blocco, Paralisi, Sonno, Incoscienza, Stordimento, Parola del Potere: Stordire e Fallimento del Morale. Furia non protegge da Debolezza Mentale, Labirinto, Imprigionamento, Risucchio di Livello o effetti di morte. Durante la Furia non è possibile lanciare incantesimi arcani o divini. Al termine si applicano il normale affaticamento e il periodo di recupero del Berserker. Durante la Furia raddoppiano i bonus ai danni in mischia di In Extremis e, dal 14° livello, i bonus alla resistenza fisica.~
+@905 = ~Berserker Revised KIT non è compatibile con il precedente componente standalone Berserker Reforged. Disinstalla prima il vecchio overhaul.~
+@907 = ~Berserker Revised KIT non ha trovato SPCL321.SPL.~
+@908 = ~Berserker Revised KIT non ha trovato WEAPPROF.2DA.~
+@909 = ~Berserker Revised KIT non ha trovato KITLIST.2DA.~
