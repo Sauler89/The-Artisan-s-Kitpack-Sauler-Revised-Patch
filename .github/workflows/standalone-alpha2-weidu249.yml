@@ -1,0 +1,62 @@
+name: Standalone Berserker Revised alpha2 - WeiDU 249 QA
+
+on:
+  push:
+    branches:
+      - sauler-revised-bootstrap
+    paths:
+      - 'standalone-parser-alpha2/**'
+      - '.github/workflows/standalone-alpha2-weidu249.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  parse:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Check out branch
+        uses: actions/checkout@v4
+
+      - name: Assemble standalone main TPA
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat \
+            standalone-parser-alpha2/main.part1 \
+            standalone-parser-alpha2/main.part2 \
+            standalone-parser-alpha2/main.part3 \
+            standalone-parser-alpha2/main.part4 \
+            > standalone-parser-alpha2/BerserkerRevisedKIT/lib/main.tpa
+
+      - name: Download official WeiDU 249.00 Linux build
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -L --fail --retry 3 \
+            -o /tmp/weidu249.zip \
+            https://github.com/WeiDUorg/weidu/releases/download/v249.00/WeiDU-Linux-249-amd64.zip
+          mkdir -p /tmp/weidu249
+          unzip -q /tmp/weidu249.zip -d /tmp/weidu249
+          WEIDU=$(find /tmp/weidu249 -type f -name weidu -print -quit)
+          test -n "$WEIDU"
+          chmod +x "$WEIDU"
+          echo "WEIDU=$WEIDU" >> "$GITHUB_ENV"
+          "$WEIDU" --version
+
+      - name: Parse TP2
+        working-directory: standalone-parser-alpha2
+        run: '"$WEIDU" --parse-check TP2 Setup-BerserkerRevisedKIT.tp2'
+
+      - name: Parse functions
+        working-directory: standalone-parser-alpha2
+        run: '"$WEIDU" --parse-check TPH BerserkerRevisedKIT/lib/functions.tph'
+
+      - name: Parse core
+        working-directory: standalone-parser-alpha2
+        run: '"$WEIDU" --parse-check TPA BerserkerRevisedKIT/lib/main.tpa'
+
+      - name: Parse S&A tail
+        working-directory: standalone-parser-alpha2
+        run: '"$WEIDU" --parse-check TPA BerserkerRevisedKIT/lib/compat_saa54.tpa'
