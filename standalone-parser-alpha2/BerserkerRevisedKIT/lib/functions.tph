@@ -1,0 +1,225 @@
+// Berserker Revised KIT - local WeiDU helpers
+
+
+// Return a SPLPROT row that evaluates SPLSTATE 104 (STATE_ENRAGED) == true.
+// Reuse an identical row if one already exists; otherwise append at the exact
+// next engine index. This avoids duplicate predicates and row-index ambiguity.
+DEFINE_ACTION_FUNCTION BRK_ENSURE_ENRAGED_SPLPROT
+  RET index
+BEGIN
+  OUTER_SET index = 0 - 1
+  ACTION_IF FILE_EXISTS_IN_GAME ~splprot.2da~ BEGIN
+    COPY_EXISTING ~splprot.2da~ ~override~
+      READ_2DA_ENTRIES_NOW brk_spp 4
+      FOR (brk_spp_row = 0; brk_spp_row < brk_spp; ++brk_spp_row) BEGIN
+        READ_2DA_ENTRY_FORMER brk_spp brk_spp_row 1 brk_spp_stat
+        READ_2DA_ENTRY_FORMER brk_spp brk_spp_row 2 brk_spp_value
+        READ_2DA_ENTRY_FORMER brk_spp brk_spp_row 3 brk_spp_relation
+        PATCH_IF ((~%brk_spp_stat%~ STRING_EQUAL_CASE ~0x112~) OR
+                  (~%brk_spp_stat%~ STRING_EQUAL ~274~)) AND
+                 (~%brk_spp_value%~ STRING_EQUAL ~104~) AND
+                 (~%brk_spp_relation%~ STRING_EQUAL ~1~) BEGIN
+          SET index = brk_spp_row
+          SET brk_spp_row = brk_spp
+        END
+      END
+      PATCH_IF (index < 0) BEGIN
+        TEXT_SPRINT brk_spp_line ~%brk_spp%        0x112        104        1~
+        INSERT_2DA_ROW brk_spp 4 ~%brk_spp_line%~
+        SET index = brk_spp
+      END
+    BUT_ONLY
+  END
+END
+
+// Delete every effect from an SPL shell while preserving its headers/metadata.
+DEFINE_PATCH_FUNCTION BRK_CLEAR_EFFECTS BEGIN
+  FOR (brk_op = 0; brk_op <= 500; ++brk_op) BEGIN
+    LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = brk_op END
+  END
+END
+
+// WeiDU's high-level effect helpers are awkward with signed p1 values on some builds.
+// Write parameter1 directly in all extended headers matching an opcode.
+DEFINE_PATCH_FUNCTION BRK_SET_SIGNED_P1
+  INT_VAR match_op = 0
+          new_p1   = 0
+BEGIN
+  READ_LONG  0x64 brk_abil_off
+  READ_SHORT 0x68 brk_abil_num
+  READ_LONG  0x6a brk_fx_off
+  FOR (brk_i = 0; brk_i < brk_abil_num; ++brk_i) BEGIN
+    READ_SHORT (brk_abil_off + brk_i * 0x28 + 0x1e) brk_nfx
+    READ_SHORT (brk_abil_off + brk_i * 0x28 + 0x20) brk_first
+    FOR (brk_j = 0; brk_j < brk_nfx; ++brk_j) BEGIN
+      READ_SHORT (brk_fx_off + (brk_first + brk_j) * 0x30) brk_cur_op
+      PATCH_IF (brk_cur_op = match_op) BEGIN
+        WRITE_LONG (brk_fx_off + (brk_first + brk_j) * 0x30 + 0x04) new_p1
+      END
+    END
+  END
+END
+
+// Add an AP_/GA_ entry to the first free cell at the requested level without
+// replacing other mods' CLAB entries. Fails loudly rather than destroying data.
+DEFINE_PATCH_FUNCTION BRK_SET_CLAB_ENTRY
+  INT_VAR level = 1
+  STR_VAR entry = ~~
+BEGIN
+  COUNT_2DA_COLS brk_cols
+  READ_2DA_ENTRIES_NOW brk_clab brk_cols
+  SET brk_done = 0
+  FOR (brk_row = 0; brk_row < brk_clab; ++brk_row) BEGIN
+    READ_2DA_ENTRY_FORMER brk_clab brk_row level brk_cell
+    PATCH_IF (!brk_done AND (~%brk_cell%~ STRING_EQUAL_CASE ~****~)) BEGIN
+      SET_2DA_ENTRY_LATER ~brk_clabw~ brk_row level ~%entry%~
+      SET brk_done = 1
+    END
+  END
+  PATCH_IF (!brk_done) BEGIN
+    PATCH_FAIL ~Berserker Revised KIT: no free CLABFI02 cell at level %level%.~
+  END
+  SET_2DA_ENTRIES_NOW ~brk_clabw~ brk_cols
+END
+
+// Common cleanup at the start of a threshold spell. Effects from the previous
+// tier expire immediately instead of coexisting for the 12-second refresh window.
+DEFINE_PATCH_FUNCTION BRK_ADD_CLEANUP
+  STR_VAR r1 = ~~ r2 = ~~ r3 = ~~ d1 = ~~ d2 = ~~ d3 = ~~
+BEGIN
+  PATCH_IF (STRING_LENGTH ~%r1%~ > 0) BEGIN
+    LPF ADD_SPELL_EFFECT INT_VAR opcode = 321 target = 2 timing = 0 resist_dispel = 2 parameter1 = 8 insert_point = 0 STR_VAR resource = EVAL ~%r1%~ END
+  END
+  PATCH_IF (STRING_LENGTH ~%r2%~ > 0) BEGIN
+    LPF ADD_SPELL_EFFECT INT_VAR opcode = 321 target = 2 timing = 0 resist_dispel = 2 parameter1 = 8 insert_point = 0 STR_VAR resource = EVAL ~%r2%~ END
+  END
+  PATCH_IF (STRING_LENGTH ~%r3%~ > 0) BEGIN
+    LPF ADD_SPELL_EFFECT INT_VAR opcode = 321 target = 2 timing = 0 resist_dispel = 2 parameter1 = 8 insert_point = 0 STR_VAR resource = EVAL ~%r3%~ END
+  END
+  PATCH_IF (STRING_LENGTH ~%d1%~ > 0) BEGIN
+    LPF ADD_SPELL_EFFECT INT_VAR opcode = 321 target = 2 timing = 0 resist_dispel = 2 parameter1 = 8 insert_point = 0 STR_VAR resource = EVAL ~%d1%~ END
+  END
+  PATCH_IF (STRING_LENGTH ~%d2%~ > 0) BEGIN
+    LPF ADD_SPELL_EFFECT INT_VAR opcode = 321 target = 2 timing = 0 resist_dispel = 2 parameter1 = 8 insert_point = 0 STR_VAR resource = EVAL ~%d2%~ END
+  END
+  PATCH_IF (STRING_LENGTH ~%d3%~ > 0) BEGIN
+    LPF ADD_SPELL_EFFECT INT_VAR opcode = 321 target = 2 timing = 0 resist_dispel = 2 parameter1 = 8 insert_point = 0 STR_VAR resource = EVAL ~%d3%~ END
+  END
+END
+
+
+// Ensure an AP_/GA_ entry exists at a specific level. Unlike BRK_SET_CLAB_ENTRY,
+// this is idempotent and is intended for late compatibility tails.
+DEFINE_PATCH_FUNCTION BRK_ENSURE_CLAB_ENTRY
+  INT_VAR level = 1
+  STR_VAR entry = ~~
+BEGIN
+  COUNT_2DA_COLS brk_cols
+  READ_2DA_ENTRIES_NOW brk_clab brk_cols
+  SET brk_found = 0
+  FOR (brk_row = 0; brk_row < brk_clab; ++brk_row) BEGIN
+    READ_2DA_ENTRY_FORMER brk_clab brk_row level brk_cell
+    PATCH_IF (~%brk_cell%~ STRING_EQUAL_CASE ~%entry%~) BEGIN
+      SET brk_found = 1
+    END
+  END
+  PATCH_IF (!brk_found) BEGIN
+    LPF BRK_SET_CLAB_ENTRY INT_VAR level = level STR_VAR entry = EVAL ~%entry%~ END
+  END
+END
+
+// Enforce the Revised ranged-weapon policy across both the stock EE WEAPPROF
+// labels and Skills and Abilities 5.4's consolidated BOW/MISSILE weapon groups.
+// S&A's THROWN and ARCHERY style rows are deliberately left untouched.
+//
+// WEAPPROF has one fewer token in its header than in each data row because the
+// data rows have a leading row label. We therefore use a min-column=1 read only
+// to locate the BERSERKER header column (+1 for the row-label column), then a
+// second read with the table's FULL column count for data writes. In that second
+// read the header is excluded, so READ row indexes map directly to SET rows.
+DEFINE_PATCH_FUNCTION BRK_ENFORCE_RANGED_CAP BEGIN
+  SET brk_ber_col = 0 - 1
+  COUNT_2DA_COLS brk_wp_cols
+
+  READ_2DA_ENTRIES_NOW brk_wp_head 1
+  FOR (brk_r = 0; (brk_r < brk_wp_head) AND (brk_ber_col < 0); ++brk_r) BEGIN
+    READ_2DA_ENTRY_FORMER brk_wp_head brk_r 0 brk_tok
+    PATCH_IF (~%brk_tok%~ STRING_EQUAL_CASE ~ID~) BEGIN
+      FOR (brk_c = 1; (brk_c < (brk_wp_cols - 1)) AND (brk_ber_col < 0); ++brk_c) BEGIN
+        READ_2DA_ENTRY_FORMER brk_wp_head brk_r brk_c brk_tok
+        PATCH_IF (~%brk_tok%~ STRING_EQUAL_CASE ~BERSERKER~) BEGIN
+          SET brk_ber_col = brk_c + 1
+        END
+      END
+    END
+  END
+
+  PATCH_IF (brk_ber_col < 0) BEGIN
+    PATCH_FAIL ~Berserker Revised KIT: BERSERKER column not found in WEAPPROF.2DA.~
+  END
+
+  READ_2DA_ENTRIES_NOW brk_wp brk_wp_cols
+  SET brk_wp_writes = 0
+  FOR (brk_r = 0; brk_r < brk_wp; ++brk_r) BEGIN
+    READ_2DA_ENTRY_FORMER brk_wp brk_r 0 brk_tok
+    PATCH_IF (~%brk_tok%~ STRING_EQUAL_CASE ~BOW_BG1~)
+          OR (~%brk_tok%~ STRING_EQUAL_CASE ~MISSILE_BG1~)
+          OR (~%brk_tok%~ STRING_EQUAL_CASE ~CROSSBOW~)
+          OR (~%brk_tok%~ STRING_EQUAL_CASE ~LONGBOW~)
+          OR (~%brk_tok%~ STRING_EQUAL_CASE ~SHORTBOW~)
+          OR (~%brk_tok%~ STRING_EQUAL_CASE ~DART~)
+          OR (~%brk_tok%~ STRING_EQUAL_CASE ~SLING~)
+          OR (~%brk_tok%~ STRING_EQUAL_CASE ~BOW~)
+          OR (~%brk_tok%~ STRING_EQUAL_CASE ~MISSILE~) BEGIN
+      SET_2DA_ENTRY_LATER ~brk_wpw~ brk_r brk_ber_col ~1~
+      SET brk_wp_writes += 1
+    END
+  END
+  PATCH_IF (brk_wp_writes = 0) BEGIN
+    PATCH_FAIL ~Berserker Revised KIT: no supported ranged proficiency rows found in WEAPPROF.2DA.~
+  END ELSE BEGIN
+    SET_2DA_ENTRIES_NOW ~brk_wpw~ brk_wp_cols
+  END
+END
+
+
+// Resolve the existing kit-description strref for a stock kit and keep the
+// CLASTEXT-family tables pointing at that same strref. This avoids creating a
+// duplicate kit and keeps character-generation UI text coherent.
+DEFINE_ACTION_FUNCTION BRK_GET_KIT_STRREF
+  STR_VAR kit_name = ~~
+  RET kit_strref
+BEGIN
+  OUTER_SET kit_strref = 0 - 1
+  ACTION_IF (STRING_LENGTH ~%kit_name%~ > 0) BEGIN
+    COPY_EXISTING ~kitlist.2da~ ~override~
+      TO_LOWER kit_name
+      COUNT_2DA_ROWS 5 brk_num_rows
+      FOR (brk_row = 0; brk_row < brk_num_rows; brk_row += 1) BEGIN
+        READ_2DA_ENTRY brk_row 1 5 brk_kit
+        TO_LOWER brk_kit
+        PATCH_IF (~%brk_kit%~ STRING_EQUAL ~%kit_name%~) BEGIN
+          READ_2DA_ENTRY brk_row 4 5 kit_strref
+          SET brk_row = brk_num_rows
+        END
+      END
+    BUT_ONLY
+
+    ACTION_IF (kit_strref >= 0) BEGIN
+      ACTION_FOR_EACH brk_classtext IN BGCLATXT CLASTEXT SODCLTXT BEGIN
+        ACTION_IF FILE_EXISTS_IN_GAME ~%brk_classtext%.2da~ BEGIN
+          COPY_EXISTING ~%brk_classtext%.2da~ ~override~
+            COUNT_2DA_COLS brk_cols
+            READ_2DA_ENTRIES_NOW brk_rows brk_cols
+            FOR (brk_row = 1; brk_row < brk_rows; ++brk_row) BEGIN
+              READ_2DA_ENTRY_FORMER brk_rows brk_row 0 brk_text
+              PATCH_IF (~%brk_text%~ STRING_EQUAL ~%kit_name%~) BEGIN
+                SET_2DA_ENTRY brk_row 4 brk_cols kit_strref
+              END
+            END
+          BUT_ONLY
+        END
+      END
+    END
+  END
+END
