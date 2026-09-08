@@ -1,0 +1,128 @@
+name: Check Artisan Upstream
+
+on:
+  schedule:
+    - cron: '0 9 * * 1' # Monday 09:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check-upstream:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out Sauler Revised fork
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fetch Artisan upstream
+        run: |
+          git remote add upstream https://github.com/TheArtisanBG/The-Artisan-s-Kitpack.git 2>/dev/null || \
+            git remote set-url upstream https://github.com/TheArtisanBG/The-Artisan-s-Kitpack.git
+          git fetch --no-tags upstream master
+
+      - name: Analyze upstream divergence
+        id: check
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          BEHIND=$(git rev-list --count HEAD..upstream/master)
+          MERGE_BASE=$(git merge-base HEAD upstream/master)
+          CHANGED_FILE_LIST=$(mktemp)
+          SENSITIVE_FILE_LIST=$(mktemp)
+
+          git diff --name-only "${MERGE_BASE}"..upstream/master > "${CHANGED_FILE_LIST}"
+
+          # Paths that either belong to the Sauler Revised Berserker or provide
+          # shared infrastructure on which #1003 currently depends.
+          grep -E '^(ArtisansKitpack/lib/Berserker\.tpa|ArtisansKitpack/Fighter/Berserker/|ArtisansKitpack/lib/functions\.tph|ArtisansKitpack/ArtisansKitpack\.TP2|ArtisansKitpack/ArtisansKitpack\.ini)$' \
+            "${CHANGED_FILE_LIST}" > "${SENSITIVE_FILE_LIST}" || true
+
+          SENSITIVE_COUNT=$(wc -l < "${SENSITIVE_FILE_LIST}" | tr -d ' ')
+
+          echo "behind=${BEHIND}" >> "$GITHUB_OUTPUT"
+          echo "sensitive_count=${SENSITIVE_COUNT}" >> "$GITHUB_OUTPUT"
+
+          {
+            echo "# Artisan upstream synchronization report"
+            echo
+            echo "- Fork commit: \`${GITHUB_SHA}\`"
+            echo "- Merge base: \`${MERGE_BASE}\`"
+            echo "- New upstream commits not present in this fork: **${BEHIND}**"
+            echo "- Compatibility-sensitive changed paths: **${SENSITIVE_COUNT}**"
+            echo
+
+            if [ "${BEHIND}" -eq 0 ]; then
+              echo "The fork is up to date with the currently fetched Artisan upstream history."
+            else
+              echo "## Upstream commits"
+              echo
+              echo '```text'
+              git log --oneline --no-decorate HEAD..upstream/master
+              echo '```'
+              echo
+              echo "## Files changed upstream since the merge base"
+              echo
+              if [ -s "${CHANGED_FILE_LIST}" ]; then
+                sed 's/^/- `/' "${CHANGED_FILE_LIST}" | sed 's/$/`/'
+              else
+                echo "No changed paths detected."
+              fi
+              echo
+              echo "## Sauler compatibility-sensitive overlap"
+              echo
+              if [ -s "${SENSITIVE_FILE_LIST}" ]; then
+                echo "**Manual review required before synchronization.**"
+                echo
+                sed 's/^/- `/' "${SENSITIVE_FILE_LIST}" | sed 's/$/`/'
+              else
+                echo "No currently registered Berserker-sensitive paths were changed upstream. Normal review is still required before merging."
+              fi
+            fi
+          } | tee upstream-report.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Create or update upstream-sync issue
+        if: steps.check.outputs.behind != '0'
+        uses: actions/github-script@v7
+        env:
+          BEHIND: ${{ steps.check.outputs.behind }}
+          SENSITIVE_COUNT: ${{ steps.check.outputs.sensitive_count }}
+        with:
+          script: |
+            const fs = require('fs');
+            const body = fs.readFileSync('upstream-report.md', 'utf8');
+            const behind = process.env.BEHIND;
+            const sensitive = process.env.SENSITIVE_COUNT;
+            const title = `[upstream-sync] Artisan has ${behind} new commit(s)` +
+              (Number(sensitive) > 0 ? ` — ${sensitive} sensitive path(s)` : '');
+
+            const issues = await github.paginate(github.rest.issues.listForRepo, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              per_page: 100
+            });
+            const existing = issues.find(issue =>
+              !issue.pull_request && issue.title.startsWith('[upstream-sync]')
+            );
+
+            if (existing) {
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: existing.number,
+                title,
+                body
+              });
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title,
+                body
+              });
+            }
