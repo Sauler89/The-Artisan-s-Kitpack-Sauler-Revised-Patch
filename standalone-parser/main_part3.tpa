@@ -1,0 +1,106 @@
+COPY_EXISTING ~clabfi02.2da~ ~override~
+  LPF BRK_REMOVE_CLAB_ENTRY STR_VAR entry = ~AP_SPCL322~ END
+  LPF BRK_SET_CLAB_ENTRY INT_VAR level = 1 STR_VAR entry = ~AP_BRKIE1~ END
+  LPF BRK_SET_CLAB_ENTRY INT_VAR level = 7 STR_VAR entry = ~AP_BRKIE7~ END
+  LPF BRK_SET_CLAB_ENTRY INT_VAR level = 10 STR_VAR entry = ~AP_BRKIE10~ END
+  LPF BRK_SET_CLAB_ENTRY INT_VAR level = 14 STR_VAR entry = ~AP_BRKIE14~ END
+  LPF BRK_SET_CLAB_ENTRY INT_VAR level = 20 STR_VAR entry = ~AP_BRKIE20~ END
+  PRETTY_PRINT_2DA
+BUT_ONLY
+
+OUTER_SET brk_charm_state = IDS_OF_SYMBOL (~splstate~ ~CHARM_IMMUNITY~)
+OUTER_SET brk_conf_state = IDS_OF_SYMBOL (~splstate~ ~CONFUSION_IMMUNITY~)
+OUTER_SET brk_hold_state = IDS_OF_SYMBOL (~splstate~ ~HOLD_IMMUNITY~)
+OUTER_SET brk_panic_state = IDS_OF_SYMBOL (~splstate~ ~PANIC_IMMUNITY~)
+OUTER_SET brk_sleep_state = IDS_OF_SYMBOL (~splstate~ ~SLEEP_IMMUNITY~)
+OUTER_SET brk_stun_state = IDS_OF_SYMBOL (~splstate~ ~STUN_IMMUNITY~)
+OUTER_SET brk_feeb_state = IDS_OF_SYMBOL (~splstate~ ~FEEBLEMIND_IMMUNITY~)
+
+COPY_EXISTING ~spcl321.spl~ ~override~
+  LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 0 END
+  LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 54 END
+  LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 73 END
+  LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 284 END
+  LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 285 END
+  LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 101 match_parameter2 = 5 END
+  LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 101 match_parameter2 = 128 END
+  LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 101 match_parameter2 = 24 END
+  LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 101 match_parameter2 = 175 END
+  LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 101 match_parameter2 = 109 END
+  LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 101 match_parameter2 = 39 END
+  LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 101 match_parameter2 = 217 END
+  LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 101 match_parameter2 = 45 END
+  LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 101 match_parameter2 = 210 END
+  LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 101 match_parameter2 = 23 END
+  LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 101 match_parameter2 = 106 END
+  LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 101 match_parameter2 = 76 END
+  LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 101 match_parameter2 = 211 END
+  LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 101 match_parameter2 = 213 END
+  LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 101 match_parameter2 = 216 END
+  LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 296 STR_VAR match_resource = ~cdfeeble~ END
+  PATCH_IF (brk_feeb_state >= 0) BEGIN
+    LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 328 match_parameter2 = brk_feeb_state END
+  END
+  LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 282 match_parameter1 = 1 match_parameter2 = 2 END
+  LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 267 match_parameter1 = 41495 END
+  LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 267 match_parameter1 = 40968 END
+  LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 267 match_parameter1 = 40969 END
+  LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 267 match_parameter1 = 40979 END
+  LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 267 match_parameter1 = 41616 END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 101 target = 2 timing = 0 duration = 60 resist_dispel = 2 parameter2 = 5 END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 101 target = 2 timing = 0 duration = 60 resist_dispel = 2 parameter2 = 128 END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 101 target = 2 timing = 0 duration = 60 resist_dispel = 2 parameter2 = 24 END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 101 target = 2 timing = 0 duration = 60 resist_dispel = 2 parameter2 = 175 END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 101 target = 2 timing = 0 duration = 60 resist_dispel = 2 parameter2 = 109 END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 101 target = 2 timing = 0 duration = 60 resist_dispel = 2 parameter2 = 39 END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 101 target = 2 timing = 0 duration = 60 resist_dispel = 2 parameter2 = 217 END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 101 target = 2 timing = 0 duration = 60 resist_dispel = 2 parameter2 = 45 END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 101 target = 2 timing = 0 duration = 60 resist_dispel = 2 parameter2 = 210 END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 101 target = 2 timing = 0 duration = 60 resist_dispel = 2 parameter2 = 23 END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 101 target = 2 timing = 0 duration = 60 resist_dispel = 2 parameter2 = 106 END
+  LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 328 match_parameter2 = 104 END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 328 target = 2 timing = 0 duration = 60 resist_dispel = 2 parameter2 = 104 END
+  PATCH_IF (brk_charm_state >= 0) BEGIN
+    LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 328 match_parameter2 = brk_charm_state END
+    LPF ADD_SPELL_EFFECT INT_VAR opcode = 328 target = 2 timing = 0 duration = 60 resist_dispel = 2 parameter2 = brk_charm_state END
+  END
+  PATCH_IF (brk_conf_state >= 0) BEGIN
+    LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 328 match_parameter2 = brk_conf_state END
+    LPF ADD_SPELL_EFFECT INT_VAR opcode = 328 target = 2 timing = 0 duration = 60 resist_dispel = 2 parameter2 = brk_conf_state END
+  END
+  PATCH_IF (brk_hold_state >= 0) BEGIN
+    LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 328 match_parameter2 = brk_hold_state END
+    LPF ADD_SPELL_EFFECT INT_VAR opcode = 328 target = 2 timing = 0 duration = 60 resist_dispel = 2 parameter2 = brk_hold_state END
+  END
+  PATCH_IF (brk_panic_state >= 0) BEGIN
+    LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 328 match_parameter2 = brk_panic_state END
+    LPF ADD_SPELL_EFFECT INT_VAR opcode = 328 target = 2 timing = 0 duration = 60 resist_dispel = 2 parameter2 = brk_panic_state END
+  END
+  PATCH_IF (brk_sleep_state >= 0) BEGIN
+    LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 328 match_parameter2 = brk_sleep_state END
+    LPF ADD_SPELL_EFFECT INT_VAR opcode = 328 target = 2 timing = 0 duration = 60 resist_dispel = 2 parameter2 = brk_sleep_state END
+  END
+  PATCH_IF (brk_stun_state >= 0) BEGIN
+    LPF DELETE_EFFECT INT_VAR silent = 1 multi_match = 1 match_opcode = 328 match_parameter2 = brk_stun_state END
+    LPF ADD_SPELL_EFFECT INT_VAR opcode = 328 target = 2 timing = 0 duration = 60 resist_dispel = 2 parameter2 = brk_stun_state END
+  END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 145 target = 2 timing = 0 duration = 60 resist_dispel = 2 parameter2 = 0 special = 1 END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 145 target = 2 timing = 0 duration = 60 resist_dispel = 2 parameter2 = 1 special = 1 END
+  SAY NAME1 @300
+  SAY UNIDENTIFIED_DESC @301
+BUT_ONLY
+
+COPY_EXISTING ~weapprof.2da~ ~override~
+  LPF BRK_ENFORCE_RANGED_CAP END
+  PRETTY_PRINT_2DA
+BUT_ONLY
+
+LAF BRK_GET_KIT_STRREF STR_VAR kit_name = ~BERSERKER~ RET brk_kit_strref = kit_strref END
+ACTION_IF (brk_kit_strref >= 0) BEGIN
+  OUTER_SPRINT brk_kit_text @200
+  STRING_SET_EVALUATE brk_kit_strref ~%brk_kit_text%~
+END ELSE BEGIN
+  OUTER_PATCH ~~ BEGIN
+    PATCH_FAIL ~Berserker Revised KIT: could not resolve the BERSERKER kit description strref.~
+  END
+END
