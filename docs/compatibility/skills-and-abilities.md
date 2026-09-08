@@ -8,14 +8,16 @@ These notes therefore describe **v5.4** specifically.
 
 ## Recommended order
 
-For a heavily modded BG2EE/EET installation:
+For the intended heavily modded BG2EE/EET installation:
 
 1. base fixes / EE Fixpack;
 2. **The Artisan's Kitpack — Sauler Revised Patch #1003 Berserker Overhaul**;
-3. SCS;
+3. optional SCS **general game tweaks only**, with every SCS component that modifies classes, kits, Rage/Enrage, class HLAs, or other kit-specific mechanics excluded;
 4. other mods that should precede Skills and Abilities;
 5. **Skills and Abilities v5.4**;
 6. `EET_END`, when using EET.
+
+SCS is not an authority for class/kit mechanics in this setup. Sauler Revised and Skills and Abilities provide the class/kit behavior being validated here.
 
 Unlike the earlier standalone Berserker Reforged prototype, the integrated fork currently has no separate `#1010` compatibility-tail component. Compatibility is designed into #1003 itself where possible.
 
@@ -121,6 +123,7 @@ Before beta, verify at least:
 - #1003 + #150 + proficiency overhaul;
 - #1003 + #710/#720;
 - full preferred S&A selection;
+- optional final smoke test with the user's SCS general-tweak-only selection and all SCS class/kit components excluded;
 - EET order with `EET_END`;
 - save/APR values at levels 17 and 20;
 - BOW/MISSILE caps and THROWN/ARCHERY preservation.
