@@ -1,0 +1,103 @@
+COPY_EXISTING ~brkie7.spl~ ~override~
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 232 target = 2 timing = 9 resist_dispel = 2 parameter1 = 0 parameter2 = 20 special = 76 STR_VAR resource = ~BRKM1~ END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 232 target = 2 timing = 9 resist_dispel = 2 parameter1 = 0 parameter2 = 20 special = 50 STR_VAR resource = ~BRKM2~ END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 232 target = 2 timing = 9 resist_dispel = 2 parameter1 = 0 parameter2 = 20 special = 26 STR_VAR resource = ~BRKM3~ END
+BUT_ONLY
+COPY_EXISTING ~brkm1.spl~ ~override~
+  LPF BRK_ADD_CLEANUP STR_VAR r1=~BRKM1~ r2=~BRKM2~ r3=~BRKM3~ END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 126 target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 1 END
+BUT_ONLY
+COPY_EXISTING ~brkm2.spl~ ~override~
+  LPF BRK_ADD_CLEANUP STR_VAR r1=~BRKM1~ r2=~BRKM2~ r3=~BRKM3~ END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 126 target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 2 END
+BUT_ONLY
+COPY_EXISTING ~brkm3.spl~ ~override~
+  LPF BRK_ADD_CLEANUP STR_VAR r1=~BRKM1~ r2=~BRKM2~ r3=~BRKM3~ END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 126 target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 4 END
+BUT_ONLY
+
+COPY_EXISTING ~brkie10.spl~ ~override~
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 232 target = 2 timing = 9 resist_dispel = 2 parameter1 = 0 parameter2 = 20 special = 76 STR_VAR resource = ~BRKS1~ END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 232 target = 2 timing = 9 resist_dispel = 2 parameter1 = 0 parameter2 = 20 special = 50 STR_VAR resource = ~BRKS2~ END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 232 target = 2 timing = 9 resist_dispel = 2 parameter1 = 0 parameter2 = 20 special = 26 STR_VAR resource = ~BRKS3~ END
+BUT_ONLY
+COPY_EXISTING ~brks1.spl~ ~override~
+  LPF BRK_ADD_CLEANUP STR_VAR r1=~BRKS1~ r2=~BRKS2~ r3=~BRKS3~ END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 325 target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 1 END
+  LPF BRK_SET_SIGNED_P1 INT_VAR match_op = 325 new_p1 = (0 - 1) END
+BUT_ONLY
+COPY_EXISTING ~brks2.spl~ ~override~
+  LPF BRK_ADD_CLEANUP STR_VAR r1=~BRKS1~ r2=~BRKS2~ r3=~BRKS3~ END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 325 target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 1 END
+  LPF BRK_SET_SIGNED_P1 INT_VAR match_op = 325 new_p1 = (0 - 2) END
+BUT_ONLY
+COPY_EXISTING ~brks3.spl~ ~override~
+  LPF BRK_ADD_CLEANUP STR_VAR r1=~BRKS1~ r2=~BRKS2~ r3=~BRKS3~ END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 325 target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 1 END
+  LPF BRK_SET_SIGNED_P1 INT_VAR match_op = 325 new_p1 = (0 - 4) END
+BUT_ONLY
+
+COPY_EXISTING ~brkie14.spl~ ~override~
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 232 target = 2 timing = 9 resist_dispel = 2 parameter1 = 0 parameter2 = 20 special = 76 STR_VAR resource = ~BRKR1~ END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 232 target = 2 timing = 9 resist_dispel = 2 parameter1 = 0 parameter2 = 20 special = 50 STR_VAR resource = ~BRKR2~ END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 232 target = 2 timing = 9 resist_dispel = 2 parameter1 = 0 parameter2 = 20 special = 26 STR_VAR resource = ~BRKR3~ END
+BUT_ONLY
+COPY_EXISTING ~brkx1.spl~ ~override~
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 86 target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 3 END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 87 target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 3 END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 88 target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 3 END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 89 target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 3 END
+BUT_ONLY
+COPY_EXISTING ~brkx2.spl~ ~override~
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 86 target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 6 END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 87 target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 6 END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 88 target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 6 END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 89 target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 6 END
+BUT_ONLY
+COPY_EXISTING ~brkx3.spl~ ~override~
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 86 target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 10 END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 87 target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 10 END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 88 target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 10 END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 89 target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 10 END
+BUT_ONLY
+COPY_EXISTING ~brkr1.spl~ ~override~
+  LPF BRK_ADD_CLEANUP STR_VAR r1=~BRKR1~ r2=~BRKR2~ r3=~BRKR3~ d1=~BRKX1~ d2=~BRKX2~ d3=~BRKX3~ END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 86 target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 3 END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 87 target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 3 END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 88 target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 3 END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 89 target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 3 END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 326 target = 2 timing = 1 resist_dispel = 0 parameter1 = 0 parameter2 = brk_enr_row STR_VAR resource = ~BRKX1~ END
+BUT_ONLY
+COPY_EXISTING ~brkr2.spl~ ~override~
+  LPF BRK_ADD_CLEANUP STR_VAR r1=~BRKR1~ r2=~BRKR2~ r3=~BRKR3~ d1=~BRKX1~ d2=~BRKX2~ d3=~BRKX3~ END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 86 target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 6 END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 87 target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 6 END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 88 target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 6 END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 89 target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 6 END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 326 target = 2 timing = 1 resist_dispel = 0 parameter1 = 0 parameter2 = brk_enr_row STR_VAR resource = ~BRKX2~ END
+BUT_ONLY
+COPY_EXISTING ~brkr3.spl~ ~override~
+  LPF BRK_ADD_CLEANUP STR_VAR r1=~BRKR1~ r2=~BRKR2~ r3=~BRKR3~ d1=~BRKX1~ d2=~BRKX2~ d3=~BRKX3~ END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 86 target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 10 END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 87 target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 10 END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 88 target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 10 END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 89 target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 10 END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 326 target = 2 timing = 1 resist_dispel = 0 parameter1 = 0 parameter2 = brk_enr_row STR_VAR resource = ~BRKX3~ END
+BUT_ONLY
+
+COPY_EXISTING ~brkie20.spl~ ~override~
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 232 target = 2 timing = 9 resist_dispel = 2 parameter1 = 0 parameter2 = 20 special = 76 STR_VAR resource = ~BRKL1~ END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 232 target = 2 timing = 9 resist_dispel = 2 parameter1 = 0 parameter2 = 20 special = 50 STR_VAR resource = ~BRKL2~ END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 232 target = 2 timing = 9 resist_dispel = 2 parameter1 = 0 parameter2 = 20 special = 26 STR_VAR resource = ~BRKL3~ END
+BUT_ONLY
+COPY_EXISTING ~brkl1.spl~ ~override~
+  LPF BRK_ADD_CLEANUP STR_VAR r1=~BRKL1~ r2=~BRKL2~ r3=~BRKL3~ END
+BUT_ONLY
+COPY_EXISTING ~brkl2.spl~ ~override~
+  LPF BRK_ADD_CLEANUP STR_VAR r1=~BRKL1~ r2=~BRKL2~ r3=~BRKL3~ END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 22 target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 1 END
+BUT_ONLY
+COPY_EXISTING ~brkl3.spl~ ~override~
+  LPF BRK_ADD_CLEANUP STR_VAR r1=~BRKL1~ r2=~BRKL2~ r3=~BRKL3~ END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 22 target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 2 END
+BUT_ONLY
