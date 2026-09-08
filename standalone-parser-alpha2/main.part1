@@ -1,0 +1,100 @@
+// Berserker Revised KIT v0.1.0-alpha2
+// Standalone rework of the stock BERSERKER kit for BG2EE / EET.
+
+// -----------------------------------------------------------------------------
+// 1. Runtime predicate: STATE_ENRAGED in SPLPROT for opcode 326.
+//    Reuse an identical predicate where possible instead of depending on a
+//    hard-coded row number or a custom row-name collision.
+// -----------------------------------------------------------------------------
+LAF BRK_ENSURE_ENRAGED_SPLPROT RET brk_enr_row = index END
+ACTION_IF (brk_enr_row < 0) BEGIN
+  OUTER_PATCH ~~ BEGIN
+    PATCH_FAIL ~Berserker Revised KIT: could not create/find the STATE_ENRAGED SPLPROT predicate.~
+  END
+END
+
+// -----------------------------------------------------------------------------
+// 2. Make reusable empty SPL shells from the installed game's Enrage resource.
+//    We do not ship or overwrite binary game assets.
+// -----------------------------------------------------------------------------
+ACTION_FOR_EACH brk_res IN
+  ~BRKIE1~ ~BRKIE7~ ~BRKIE10~ ~BRKIE14~ ~BRKIE20~
+  ~BRKO1~ ~BRKO2~ ~BRKO3~ ~BRKD1~ ~BRKD2~ ~BRKD3~
+  ~BRKM1~ ~BRKM2~ ~BRKM3~
+  ~BRKS1~ ~BRKS2~ ~BRKS3~
+  ~BRKR1~ ~BRKR2~ ~BRKR3~ ~BRKX1~ ~BRKX2~ ~BRKX3~
+  ~BRKL1~ ~BRKL2~ ~BRKL3~
+BEGIN
+  COPY_EXISTING ~spcl321.spl~ ~override/%brk_res%.spl~
+    LPF BRK_CLEAR_EFFECTS END
+    WRITE_LONG 0x08 0xffffffff
+    WRITE_LONG 0x0c 0xffffffff
+  BUT_ONLY
+END
+
+// -----------------------------------------------------------------------------
+// 3. L1 In Extremis: offense/AC/APR, plus permanent involuntary-berserk immunity.
+// -----------------------------------------------------------------------------
+COPY_EXISTING ~brkie1.spl~ ~override~
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 101 target = 2 timing = 9 resist_dispel = 2 parameter2 = 3 END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 232 target = 2 timing = 9 resist_dispel = 2 parameter1 = 0 parameter2 = 20 special = 76 STR_VAR resource = ~BRKO1~ END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 232 target = 2 timing = 9 resist_dispel = 2 parameter1 = 0 parameter2 = 20 special = 50 STR_VAR resource = ~BRKO2~ END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 232 target = 2 timing = 9 resist_dispel = 2 parameter1 = 0 parameter2 = 20 special = 26 STR_VAR resource = ~BRKO3~ END
+BUT_ONLY
+
+// Rage-only melee-damage deltas (+1/+2/+4), producing total +2/+4/+8 while Enraged.
+COPY_EXISTING ~brkd1.spl~ ~override~
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 285 target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 1 END
+BUT_ONLY
+COPY_EXISTING ~brkd2.spl~ ~override~
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 285 target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 2 END
+BUT_ONLY
+COPY_EXISTING ~brkd3.spl~ ~override~
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 285 target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 4 END
+BUT_ONLY
+
+// Tier 1: <=75% HP. -1 to-hit is implemented as +1 THAC0; AC penalty as +2 AC.
+COPY_EXISTING ~brko1.spl~ ~override~
+  LPF BRK_ADD_CLEANUP STR_VAR r1=~BRKO1~ r2=~BRKO2~ r3=~BRKO3~ d1=~BRKD1~ d2=~BRKD2~ d3=~BRKD3~ END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 284 target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 1 END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 285 target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 1 END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 0   target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 2 END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 326 target = 2 timing = 1 resist_dispel = 0 parameter1 = 0 parameter2 = brk_enr_row STR_VAR resource = ~BRKD1~ END
+BUT_ONLY
+
+// Tier 2: <50% HP; +1/2 APR (opcode 1 p1=6).
+COPY_EXISTING ~brko2.spl~ ~override~
+  LPF BRK_ADD_CLEANUP STR_VAR r1=~BRKO1~ r2=~BRKO2~ r3=~BRKO3~ d1=~BRKD1~ d2=~BRKD2~ d3=~BRKD3~ END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 284 target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 2 END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 285 target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 2 END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 0   target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 3 END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 1   target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 6 END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 326 target = 2 timing = 1 resist_dispel = 0 parameter1 = 0 parameter2 = brk_enr_row STR_VAR resource = ~BRKD2~ END
+BUT_ONLY
+
+// Tier 3: <=25% HP; +1 APR.
+COPY_EXISTING ~brko3.spl~ ~override~
+  LPF BRK_ADD_CLEANUP STR_VAR r1=~BRKO1~ r2=~BRKO2~ r3=~BRKO3~ d1=~BRKD1~ d2=~BRKD2~ d3=~BRKD3~ END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 284 target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 4 END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 285 target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 4 END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 0   target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 4 END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 1   target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 1 END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 326 target = 2 timing = 1 resist_dispel = 0 parameter1 = 0 parameter2 = brk_enr_row STR_VAR resource = ~BRKD3~ END
+BUT_ONLY
+
+// -----------------------------------------------------------------------------
+// 4. L7 movement rider: +1/+2/+4.
+// -----------------------------------------------------------------------------
+COPY_EXISTING ~brkie7.spl~ ~override~
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 232 target = 2 timing = 9 resist_dispel = 2 parameter1 = 0 parameter2 = 20 special = 76 STR_VAR resource = ~BRKM1~ END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 232 target = 2 timing = 9 resist_dispel = 2 parameter1 = 0 parameter2 = 20 special = 50 STR_VAR resource = ~BRKM2~ END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 232 target = 2 timing = 9 resist_dispel = 2 parameter1 = 0 parameter2 = 20 special = 26 STR_VAR resource = ~BRKM3~ END
+BUT_ONLY
+
+COPY_EXISTING ~brkm1.spl~ ~override~
+  LPF BRK_ADD_CLEANUP STR_VAR r1=~BRKM1~ r2=~BRKM2~ r3=~BRKM3~ END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 126 target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 1 END
+BUT_ONLY
+COPY_EXISTING ~brkm2.spl~ ~override~
+  LPF BRK_ADD_CLEANUP STR_VAR r1=~BRKM1~ r2=~BRKM2~ r3=~BRKM3~ END
+  LPF ADD_SPELL_EFFECT INT_VAR opcode = 126 target = 2 timing = 0 duration = 12 resist_dispel = 2 parameter1 = 2 END
